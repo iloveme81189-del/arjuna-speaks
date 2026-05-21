@@ -3,12 +3,7 @@ import { useState, useCallback } from 'react';
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-interface GroqMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
-export const useGroq = () => {
+export function useGroq() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +25,7 @@ export const useGroq = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile', // or 'mixtral-8x7b-32768'
+          model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userContent }
@@ -53,4 +48,4 @@ export const useGroq = () => {
   }, []);
 
   return { analyzeUX, loading, error };
-};
+}
