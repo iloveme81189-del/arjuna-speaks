@@ -20,7 +20,8 @@ const eventColors = {
   error: 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400',
 };
 
-export function RealTimeStream({ events }: RealTimeStreamProps) {
+export function RealTimeStream(props: RealTimeStreamProps) {
+  const { events } = props;
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 p-6 h-[400px] flex flex-col">
       <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Live Events</h3>
