@@ -18,11 +18,10 @@ export interface UXEvent {
   type: 'click' | 'scroll' | 'convert' | 'error';
   element: string;
   timestamp: Date;
-  metadata?: any;
 }
 
 export function useRealtimeData() {
-  const [data, setData] = useState<<UXData>({
+  const initialData: UXData = {
     activeUsers: 1247,
     avgSessionDuration: 4.2,
     ctr: 3.8,
@@ -43,30 +42,31 @@ export function useRealtimeData() {
       y: Math.random() * 100,
       intensity: Math.random(),
     })),
-  });
+  };
 
-  const [events, setEvents] = useState<<UXEvent[]>([]);
-  const intervalRef = useRef<<ReturnType<<typeof setInterval> | null>(null);
+  const [data, setData] = useState(initialData);
+  const [events, setEvents] = useState([]);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      setData(prev => ({
+      setData((prev: any) => ({
         ...prev,
         activeUsers: prev.activeUsers + Math.floor(Math.random() * 10 - 3),
         ctr: +(prev.ctr + (Math.random() * 0.4 - 0.2)).toFixed(2),
       }));
 
-      const types: UXEvent['type'][] = ['click', 'scroll', 'convert', 'error'];
       const elements = ['Hero CTA', 'Nav Menu', 'Product Card', 'Footer', 'Search Bar'];
+      const types = ['click', 'scroll', 'convert', 'error'];
       
-      const newEvent: UXEvent = {
+      const newEvent = {
         id: Math.random().toString(36).substr(2, 9),
         type: types[Math.floor(Math.random() * types.length)],
         element: elements[Math.floor(Math.random() * elements.length)],
         timestamp: new Date(),
       };
 
-      setEvents(prev => [newEvent, ...prev].slice(0, 20));
+      setEvents((prev: any) => [newEvent, ...prev].slice(0, 20));
     }, 2000);
 
     return () => {
