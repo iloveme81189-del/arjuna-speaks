@@ -3,19 +3,8 @@ import { useGroq } from '../hooks/useGroq';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
-
-interface AIChatProps {
-  currentData: any;
-}
-
-export function AIChat({ currentData }: AIChatProps) {
-  const [messages, setMessages] = useState<Message[]>([
+export function AIChat({ currentData }: any) {
+  const [messages, setMessages] = useState([
     {
       id: '1',
       role: 'assistant',
@@ -29,26 +18,26 @@ export function AIChat({ currentData }: AIChatProps) {
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
-    const userMsg: Message = {
+    const userMsg = {
       id: Date.now().toString(),
       role: 'user',
       content: input,
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev: any) => [...prev, userMsg]);
     setInput('');
 
     const response = await analyzeUX(currentData, input);
     
     if (response) {
-      const aiMsg: Message = {
+      const aiMsg = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response,
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, aiMsg]);
+      setMessages((prev: any) => [...prev, aiMsg]);
     }
   };
 
@@ -63,7 +52,7 @@ export function AIChat({ currentData }: AIChatProps) {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <AnimatePresence>
-          {messages.map((msg) => (
+          {messages.map((msg: any) => (
             <motion.div
               key={msg.id}
               initial={{ opacity: 0, y: 10 }}
