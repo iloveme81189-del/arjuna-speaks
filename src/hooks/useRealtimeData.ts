@@ -21,8 +21,8 @@ export interface UXEvent {
   metadata?: any;
 }
 
-export const useRealtimeData = () => {
-  const [data, setData] = useState<UXData>({
+export function useRealtimeData() {
+  const [data, setData] = useState<<UXData>({
     activeUsers: 1247,
     avgSessionDuration: 4.2,
     ctr: 3.8,
@@ -45,31 +45,34 @@ export const useRealtimeData = () => {
     })),
   });
 
-  const [events, setEvents] = useState<UXEvent[]>([]);
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const [events, setEvents] = useState<<UXEvent[]>([]);
+  const intervalRef = useRef<<ReturnType<<typeof setInterval> | null>(null);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      // Simulate new data
       setData(prev => ({
         ...prev,
         activeUsers: prev.activeUsers + Math.floor(Math.random() * 10 - 3),
         ctr: +(prev.ctr + (Math.random() * 0.4 - 0.2)).toFixed(2),
       }));
 
-      // Simulate events
+      const types: UXEvent['type'][] = ['click', 'scroll', 'convert', 'error'];
+      const elements = ['Hero CTA', 'Nav Menu', 'Product Card', 'Footer', 'Search Bar'];
+      
       const newEvent: UXEvent = {
         id: Math.random().toString(36).substr(2, 9),
-        type: ['click', 'scroll', 'convert', 'error'][Math.floor(Math.random() * 4)] as UXEvent['type'],
-        element: ['Hero CTA', 'Nav Menu', 'Product Card', 'Footer', 'Search Bar'][Math.floor(Math.random() * 5)],
+        type: types[Math.floor(Math.random() * types.length)],
+        element: elements[Math.floor(Math.random() * elements.length)],
         timestamp: new Date(),
       };
 
       setEvents(prev => [newEvent, ...prev].slice(0, 20));
     }, 2000);
 
-    return () => clearInterval(intervalRef.current);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, []);
 
   return { data, events };
-};
+}
