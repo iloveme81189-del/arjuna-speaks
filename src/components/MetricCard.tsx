@@ -9,7 +9,8 @@ interface MetricCardProps {
   sparkline: number[];
 }
 
-export function MetricCard({ title, value, change, icon, sparkline }: MetricCardProps) {
+export function MetricCard(props: MetricCardProps) {
+  const { title, value, change, icon, sparkline } = props;
   const isPositive = change >= 0;
   const min = Math.min(...sparkline);
   const max = Math.max(...sparkline);
