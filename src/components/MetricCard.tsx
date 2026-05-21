@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
@@ -10,7 +9,7 @@ interface MetricCardProps {
   sparkline: number[];
 }
 
-export const MetricCard: React.FC<<MetricCardProps> = ({ title, value, change, icon, sparkline }) => {
+export function MetricCard({ title, value, change, icon, sparkline }: MetricCardProps) {
   const isPositive = change >= 0;
   const min = Math.min(...sparkline);
   const max = Math.max(...sparkline);
@@ -51,4 +50,4 @@ export const MetricCard: React.FC<<MetricCardProps> = ({ title, value, change, i
       </div>
     </motion.div>
   );
-};
+}
