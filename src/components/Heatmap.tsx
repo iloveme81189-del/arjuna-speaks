@@ -1,16 +1,14 @@
-import React from 'react';
-
 interface HeatPoint {
   x: number;
   y: number;
   intensity: number;
 }
 
-interface Props {
+interface HeatmapProps {
   data: HeatPoint[];
 }
 
-export const Heatmap: React.FC<<Props> = ({ data }) => {
+export function Heatmap({ data }: HeatmapProps) {
   return (
     <div className="relative w-full h-64 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
       <div className="absolute inset-0 flex flex-col items-center justify-center opacity-20 pointer-events-none">
@@ -40,4 +38,4 @@ export const Heatmap: React.FC<<Props> = ({ data }) => {
       ))}
     </div>
   );
-};
+}
