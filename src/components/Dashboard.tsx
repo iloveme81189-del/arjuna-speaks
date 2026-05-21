@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MetricCard } from './MetricCard';
 import { FunnelChart } from './FunnelChart';
 import { Heatmap } from './Heatmap';
@@ -7,13 +7,12 @@ import { RealTimeStream } from './RealTimeStream';
 import { useRealtimeData } from '../hooks/useRealtimeData';
 import { TrendingUp, Users, MousePointer, Clock, Zap } from 'lucide-react';
 
-export const Dashboard: React.FC = () => {
+export function Dashboard() {
   const { data, events } = useRealtimeData();
   const [darkMode, setDarkMode] = useState(false);
 
   return (
     <div className={`min-h-screen ${darkMode ? 'dark bg-gray-950' : 'bg-gray-50'}`}>
-      {/* Header */}
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
         <div className="flex justify-between items-center">
           <div>
@@ -35,7 +34,6 @@ export const Dashboard: React.FC = () => {
       </header>
 
       <main className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* KPI Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Active Users"
@@ -67,9 +65,7 @@ export const Dashboard: React.FC = () => {
           />
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Funnel & Heatmap */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-800">
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Conversion Funnel</h3>
@@ -82,7 +78,6 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* AI Chat & Real-time */}
           <div className="space-y-6">
             <AIChat currentData={data} />
             <RealTimeStream events={events} />
@@ -91,4 +86,4 @@ export const Dashboard: React.FC = () => {
       </main>
     </div>
   );
-};
+}
