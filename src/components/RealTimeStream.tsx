@@ -1,9 +1,8 @@
-import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MousePointer, ScrollText, ShoppingCart, AlertCircle } from 'lucide-react';
 import { UXEvent } from '../hooks/useRealtimeData';
 
-interface Props {
+interface RealTimeStreamProps {
   events: UXEvent[];
 }
 
@@ -21,7 +20,7 @@ const eventColors = {
   error: 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400',
 };
 
-export const RealTimeStream: React.FC<<Props> = ({ events }) => {
+export function RealTimeStream({ events }: RealTimeStreamProps) {
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 p-6 h-[400px] flex flex-col">
       <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Live Events</h3>
@@ -58,4 +57,4 @@ export const RealTimeStream: React.FC<<Props> = ({ events }) => {
       </div>
     </div>
   );
-};
+}
