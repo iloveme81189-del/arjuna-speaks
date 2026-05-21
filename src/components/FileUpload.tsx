@@ -21,8 +21,8 @@ export function FileUpload({ onFileParsed, onCancel }: FileUploadProps) {
       setError('Please upload an Excel (.xlsx, .xls) or CSV (.csv) file');
       return false;
     }
-    if (f.size > 15 * 1024 * 1024) {
-      setError('File size must be under 15MB');
+    if (f.size > 500 * 1024 * 1024) {
+      setError('File size must be under 500MB');
       return false;
     }
     return true;
@@ -45,6 +45,7 @@ export function FileUpload({ onFileParsed, onCancel }: FileUploadProps) {
         result = await parseExcelFile(f);
       }
       onFileParsed(result, f);
+    }
     } catch (err) {
       setError((err as Error).message);
       setFile(null);
@@ -85,7 +86,7 @@ export function FileUpload({ onFileParsed, onCancel }: FileUploadProps) {
               {dragOver ? 'Drop your file here' : 'Drag & drop your file here'}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Excel (.xlsx, .xls) or CSV — max 15MB
+              Excel (.xlsx, .xls) or CSV — up to 500MB
             </p>
           </div>
           <input
@@ -117,11 +118,13 @@ export function FileUpload({ onFileParsed, onCancel }: FileUploadProps) {
           )}
         </div>
       ) : parsing ? (
+        <div className="flex flex-col items-center justify-center gap-2 py-6">
         <div className="flex items-center justify-center gap-3 py-4">
           <Loader2 size={18} className="animate-spin text-teal-500" />
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            Reading <strong className="text-gray-700 dark:text-gray-300">{file.name}</strong>...
+            Processing <strong className="text-gray-700 dark:text-gray-300">{file.name}</strong>...
           </span>
+          <span className="text-[10px] text-gray-400">Large files may take a moment</span>
         </div>
       ) : (
         <div className="flex items-center justify-between">

@@ -12,6 +12,10 @@
  */
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
+// Google Drive folder IDs for organized uploads
+const UPLOADS_FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_UPLOADS_FOLDER_ID || '';
+const REPORTS_FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_REPORTS_FOLDER_ID || '';
 const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
@@ -117,11 +121,11 @@ export async function uploadToDrive(
 ): Promise<GoogleDriveFile> {
   // If a folderId was explicitly passed, use it directly
   if (!folderId) {
-    // Try the configured uploads folder first
-    if (GOOGLE_DRIVE_FOLDER_IDS?.uploads) {
+    // Try the configured uploads folder env var first
+    if (UPLOADS_FOLDER_ID) {
       try {
         const folder = await driveApiFetch(
-          `/files/${GOOGLE_DRIVE_FOLDER_IDS.uploads}?fields=id,trashed`
+          `/files/${UPLOADS_FOLDER_ID}?fields=id,trashed`
         );
         if (folder?.id && !folder?.trashed) {
           folderId = folder.id;
@@ -202,15 +206,15 @@ export async function saveDashboardLinkToDrive(
   const file = new File([blob], `${title.replace(/[^a-zA-Z0-9]/g, '_')}_dashboard_link.txt`, {
     type: 'text/plain',
   });
-  // Use the reports folder ID if configured
+  // Use the reports folder ID from env var if configured
   let reportsFolderId: string | null | undefined = undefined;
-  if (GOOGLE_DRIVE_FOLDER_IDS?.reports) {
+  if (REPORTS_FOLDER_ID) {
     try {
       const folder = await driveApiFetch(
-        `/files/${GOOGLE_DRIVE_FOLDER_IDS.reports}?fields=id,trashed`
+        `/files/${REPORTS_FOLDER_ID}?fields=id,trashed`
       );
       if (folder?.id && !folder?.trashed) {
-        reportsFolderId = folder.id; // Pass the ID directly to uploadToDrive
+        reportsFolderId = folder.id;
       }
     } catch {}
   }

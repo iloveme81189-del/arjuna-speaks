@@ -27,7 +27,7 @@ function createWelcomeSession(): ChatSession {
       {
         id: 'welcome-1',
         role: 'assistant',
-        content: `👋 Welcome to **Arjuna Speaks**!\n\n**Get started:**\n• Upload an Excel or CSV file (drag & drop or click)\n• Ask questions about your data\n• Say "generate dashboard" for visualizations\n• The AI will suggest KPIs, insights, and chart types`,
+        content: `Hey there! 👋 I'm **Arjuna Speaks**, your AI data analyst.\n\n**Here's what I can do for you:**\n\n📂 **Upload any Excel or CSV** — just drag & drop or click the paperclip\n📊 **Generate beautiful dashboards** — say "create a dashboard" or "visualize this"\n🔍 **Answer questions** — ask me anything about your data\n📈 **Spot trends & KPIs** — I'll automatically find what matters\n🔮 **Predict outcomes** — I analyze patterns to forecast what's next\n💾 **Auto-save to Drive** — dashboards get saved to Google Drive\n\n> ✨ *Just drop your file below and let's get started!*`,
         timestamp: new Date(),
       },
     ],
@@ -90,7 +90,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         {
           id: `welcome-${sessionNum}`,
           role: 'assistant',
-          content: `👋 Welcome to Chat ${sessionNum}! Upload your data and ask me anything.`,
+          content: `Hey there! 👋 I'm Arjuna Speaks. Upload your data and I'll help you uncover insights, build dashboards, and spot trends.`,
           timestamp: new Date(),
         },
       ],
