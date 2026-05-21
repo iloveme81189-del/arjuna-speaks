@@ -8,7 +8,8 @@ interface HeatmapProps {
   data: HeatPoint[];
 }
 
-export function Heatmap({ data }: HeatmapProps) {
+export function Heatmap(props: HeatmapProps) {
+  const { data } = props;
   return (
     <div className="relative w-full h-64 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
       <div className="absolute inset-0 flex flex-col items-center justify-center opacity-20 pointer-events-none">
