@@ -124,15 +124,31 @@ export interface DashboardConfig {
   filters?: string[];
 }
 
+export type PipelinePhase =
+  | 'idle'
+  | 'summarizing'
+  | 'summarized'
+  | 'recommending'
+  | 'recommended'
+  | 'awaiting-logic'
+  | 'ml-processing'
+  | 'dashboard-ready';
+
+export interface AnalysisSection {
+  title: string;
+  content: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
   metadata?: {
-    type?: 'text' | 'dashboard' | 'chart' | 'file_upload' | 'drive_link';
+    type?: 'text' | 'dashboard' | 'chart' | 'file_upload' | 'drive_link' | 'analysis';
     dashboardConfig?: DashboardConfig;
     driveUrl?: string;
+    sections?: AnalysisSection[];
   };
 }
 

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { GroqModel, GROQ_MODELS, UploadedData, DashboardConfig } from '../types/dashboard';
+import { GroqModel, GROQ_MODELS, UploadedData, DashboardConfig, PipelinePhase } from '../types/dashboard';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
@@ -104,13 +104,20 @@ Rules:
 - Always include trend direction (change %) for each metric to indicate KPI movement`;
 
     case 'analyze':
-      return `You are a senior data analyst. Analyze the provided data and give actionable insights. Be concise and data-driven. Format with bullet points.
+      return `You are a senior data analyst at a professional consulting firm. Analyze the provided data and give actionable, data-driven recommendations.
 
-For every analysis, ALWAYS include:
-1. KEY KPIs — The 3-5 most important metrics. Explain why each matters.
-2. INSIGHTS — Specific patterns, trends, outliers. Use actual numbers.
-3. PREDICTIONS — What is likely to happen next based on trends.
-4. RECOMMENDED VISUALIZATIONS — Which chart types would best represent each aspect.`;
+Your response MUST end with exactly 3 sections titled with markdown headers:
+## Recommendations
+## Insights  
+## Actions
+
+These are the 3 sections that will be shown to executives as decision cards.
+
+## Recommendations — What specific actions should be taken? What are the top 3-5 KPIs to track and why? What chart types and color schemes would best visualize this data?
+## Insights — Key patterns, trends, outliers, correlations found in the data. Use specific numbers and percentages.
+## Actions — Next steps: what to investigate further, what decisions to make, what to monitor.
+
+Be concise, professional, and data-driven. Use numbers and specifics.`;
 
     default:
       return `You are Arjuna Speaks, a professional AI data intelligence assistant. You are helpful, concise, and data-driven.
@@ -128,6 +135,74 @@ Be thorough but concise. Use numbers and specifics.`;
   }
 }
 
+/**
+ * Build the full system prompt for a given pipeline phase and data context
+ */
+function getPhaseSystemPrompt(phase: PipelinePhase, data?: UploadedData): string {
+  switch (phase) {
+    case 'summarize':
+      return `You are a senior data analyst. Given the uploaded data file, provide a clear, professional summary.
+
+Focus on:
+1. **Data Overview** — Total rows, columns, types of data (numeric vs categorical)
+2. **Key Statistics** — For numeric columns: min, max, avg, sum, missing values. Present in a clean structured format.
+3. **Data Quality** — Any missing data, outliers, or anomalies you spot
+4. **Column Descriptions** — Briefly describe what each column likely represents
+5. **Potential Use Cases** — What business questions could this data answer?
+
+Be concise, specific with numbers, and well-structured. Use bullet points and short paragraphs.`;
+
+    case 'recommend':
+      return `You are a senior dashboard architect and data visualization expert. Based on the uploaded data, recommend the optimal dashboard design.
+
+Provide recommendations covering:
+
+## Recommended KPIs
+List 3-5 key metrics to display as cards. For each: name, why it matters, aggregation method (sum/avg/count).
+
+## Best Chart Types
+For different aspects of the data, recommend specific chart types and explain why:
+- Time trends → line/smooth-line/area
+- Comparisons → bar/clustered-bar
+- Distributions → pie/donut/treemap
+- Correlations → scatter/heatmap
+- Progress → radial-gauge/bullet
+- Composition → stacked-bar/100-stacked-bar
+
+## Layout Suggestion
+Recommend a layout (2col, 3col, full) and explain the visual hierarchy.
+
+## Color Scheme
+Pick from: corporate, accessible, modern, semantic, pastels, chronological, vintage, heatmap, glow, geographic. Explain your choice.
+
+## Business Logic Opportunities
+What data transformations, groupings, or calculations would add value? E.g., growth rates, YoY comparisons, segment filters.
+
+Be specific and data-driven. Refer to actual column names from the data.`;
+
+    case 'ml-process':
+      return `You are an advanced ML/AI data processing engine. Given the uploaded data and user's business logic, apply intelligent processing to prepare the data for dashboard generation.
+
+Perform these operations:
+
+1. **Data Enrichment** — Calculate derived metrics, growth rates, percentages, ratios based on available numeric columns
+2. **Pattern Detection** — Identify trends, seasonality, outliers, and correlations
+3. **Business Logic Application** — Apply any user-specified business rules or logic
+4. **Aggregation Planning** — Determine the best groupings and aggregations for visualization
+5. **Accuracy Optimization** — Validate calculations, cross-check totals, ensure data integrity
+
+Return a structured analysis with:
+- Calculated metrics and their formulas
+- Detected patterns and anomalies
+- Applied business logic transformations
+- Recommended aggregations for charts
+- Confidence score for predictions (0-100%)`;
+
+    default:
+      return getSystemPrompt('chat');
+  }
+}
+
 export function useGroq() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +211,7 @@ export function useGroq() {
     message: string,
     data?: UploadedData,
     model: GroqModel = 'llama-3.3-70b-versatile',
-    type: 'chat' | 'analyze' | 'dashboard' = 'chat',
+    type: 'chat' | 'analyze' | 'dashboard' | 'summarize' | 'recommend' | 'ml-process' = 'chat',
   ): Promise<string | DashboardConfig | null> => {
     if (!GROQ_API_KEY) {
       setError('GROQ API key not configured. Set VITE_GROQ_API_KEY in your environment.');
@@ -146,7 +221,12 @@ export function useGroq() {
     setLoading(true);
     setError(null);
 
-    let systemPrompt = getSystemPrompt(type);
+    // For pipeline phases, use the phase-specific system prompt
+    const isPipelinePhase = type === 'summarize' || type === 'recommend' || type === 'ml-process';
+    const systemPrompt = isPipelinePhase
+      ? getPhaseSystemPrompt(type as PipelinePhase, data)
+      : getSystemPrompt(type === 'analyze' ? 'analyze' : type === 'dashboard' ? 'dashboard' : 'chat');
+    
     let userContent = message;
 
     if (data) {
@@ -161,12 +241,63 @@ export function useGroq() {
       };
 
       if (type === 'dashboard') {
-        systemPrompt += `\n\nThe user uploaded "${data.fileName}" with ${data.totalRows} rows and ${data.totalCols} columns.
+        const basePrompt = getSystemPrompt('dashboard');
+        userContent = `Generate a professional dashboard for this data. Return ONLY valid JSON.`;
+        const dataContext = `\n\nThe user uploaded "${data.fileName}" with ${data.totalRows} rows and ${data.totalCols} columns.
 Columns: ${data.headers.join(', ')}
 Numeric: ${data.numericColumns.join(', ') || 'none'}
 Categorical: ${data.categoricalColumns.join(', ') || 'none'}`;
-        userContent = `Generate a professional dashboard for this data. Return ONLY valid JSON.`;
-      } else {
+        // We need the dashboard prompt + data context
+        // Rebuild: use a custom system prompt that includes both
+        const dashboardSystemPrompt = getSystemPrompt('dashboard') + dataContext;
+        
+        try {
+          const response = await fetch(GROQ_URL, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${GROQ_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: 'system', content: dashboardSystemPrompt },
+                { role: 'user', content: userContent },
+              ],
+              temperature: 0.2,
+              max_tokens: 2048,
+            }),
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Groq API error (${response.status}): ${errText}`);
+          }
+
+          const result = await response.json();
+          const content = result.choices[0].message.content;
+          
+          try {
+            let jsonStr = content.trim();
+            if (jsonStr.startsWith('```')) {
+              jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+            }
+            return JSON.parse(jsonStr) as DashboardConfig;
+          } catch {
+            return content;
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Unknown error');
+          return null;
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      // For pipeline phases (summarize, recommend, ml-process) or analyze/chat
+      if (isPipelinePhase) {
+        userContent = `Data file: ${data.fileName}\nColumns: ${data.headers.join(', ')}\nNumeric: ${data.numericColumns.join(', ') || 'none'}\nCategorical: ${data.categoricalColumns.join(', ') || 'none'}\nTotal rows: ${data.totalRows}\nSample data (first 10 rows):\n${JSON.stringify(dataPreview.sampleRows, null, 2)}\n\n${message}`;
+      } else if (type === 'analyze' || type === 'chat') {
         userContent = `Data file: ${data.fileName}\nColumns: ${data.headers.join(', ')}\nSample (${data.totalRows} rows):\n${JSON.stringify(dataPreview.sampleRows, null, 2)}\n\nQuestion: ${message}`;
       }
     }
@@ -185,7 +316,7 @@ Categorical: ${data.categoricalColumns.join(', ') || 'none'}`;
             { role: 'user', content: userContent },
           ],
           temperature: type === 'dashboard' ? 0.2 : 0.5,
-          max_tokens: type === 'dashboard' ? 2048 : 1024,
+          max_tokens: type === 'summarize' ? 1536 : type === 'recommend' || type === 'ml-process' ? 2048 : 1024,
         }),
       });
 

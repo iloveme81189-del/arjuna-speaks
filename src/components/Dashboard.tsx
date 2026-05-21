@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, TrendingUp, Users, DollarSign, Activity,
   Target, Clock, Star, Database, Sparkles, Sun, Moon,
-  RefreshCw, BarChart3, PieChart, Globe, Share2,
+  RefreshCw, BarChart3, PieChart, Globe, Share2, Check,
 } from 'lucide-react';
 import { AIChat } from './AIChat';
 import { DynamicChart } from './DynamicChart';import { DashboardConfig, UploadedData } from '../types/dashboard';
@@ -26,39 +26,39 @@ const COLOR_SCHEMES: Record<string, {
   gradient: string; chip: string;
 }> = {
   corporate: {
-    bg: 'bg-teal-50 dark:bg-teal-950/30',
-    text: 'text-teal-600 dark:text-teal-400', border: 'border-teal-200 dark:border-teal-800/50',
-    iconBg: 'bg-teal-100 dark:bg-teal-900/40',
-    gradient: 'from-teal-600 to-blue-600',
-    chip: 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700/50',
-  },
-  accessible: {
     bg: 'bg-blue-50 dark:bg-blue-950/30',
     text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-800/50',
     iconBg: 'bg-blue-100 dark:bg-blue-900/40',
-    gradient: 'from-blue-600 to-purple-600',
+    gradient: 'from-blue-600 to-indigo-600',
     chip: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/50',
+  },
+  accessible: {
+    bg: 'bg-slate-50 dark:bg-slate-950/30',
+    text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-200 dark:border-slate-800/50',
+    iconBg: 'bg-slate-100 dark:bg-slate-900/40',
+    gradient: 'from-slate-600 to-blue-600',
+    chip: 'bg-slate-100 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/50',
   },
   modern: {
     bg: 'bg-indigo-50 dark:bg-indigo-950/30',
     text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200 dark:border-indigo-800/50',
     iconBg: 'bg-indigo-100 dark:bg-indigo-900/40',
-    gradient: 'from-indigo-600 to-purple-600',
+    gradient: 'from-indigo-600 to-blue-600',
     chip: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700/50',
   },
   semantic: {
-    bg: 'bg-green-50 dark:bg-green-950/30',
-    text: 'text-green-600 dark:text-green-400', border: 'border-green-200 dark:border-green-800/50',
-    iconBg: 'bg-green-100 dark:bg-green-900/40',
-    gradient: 'from-green-600 to-blue-600',
-    chip: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700/50',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+    text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800/50',
+    iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
+    gradient: 'from-emerald-600 to-teal-600',
+    chip: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50',
   },
   pastels: {
-    bg: 'bg-pink-50 dark:bg-pink-950/30',
-    text: 'text-pink-600 dark:text-pink-400', border: 'border-pink-200 dark:border-pink-800/50',
-    iconBg: 'bg-pink-100 dark:bg-pink-900/40',
-    gradient: 'from-pink-500 to-purple-500',
-    chip: 'bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-700/50',
+    bg: 'bg-rose-50 dark:bg-rose-950/30',
+    text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-800/50',
+    iconBg: 'bg-rose-100 dark:bg-rose-900/40',
+    gradient: 'from-rose-500 to-pink-500',
+    chip: 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/50',
   },
   chronological: {
     bg: 'bg-blue-50 dark:bg-blue-950/30',
@@ -85,7 +85,7 @@ const COLOR_SCHEMES: Record<string, {
     bg: 'bg-sky-50 dark:bg-sky-950/30',
     text: 'text-sky-600 dark:text-sky-400', border: 'border-sky-200 dark:border-sky-800/50',
     iconBg: 'bg-sky-100 dark:bg-sky-900/40',
-    gradient: 'from-sky-500 to-violet-500',
+    gradient: 'from-sky-600 to-indigo-600',
     chip: 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-700/50',
   },
   geographic: {
@@ -127,22 +127,53 @@ function formatValue(value: number, suffix?: string): string {
   return value.toLocaleString(undefined, { maximumFractionDigits: 1 });
 }
 
+const DASHBOARD_STORAGE_KEY = 'arjuna_dashboard';
+
 export function Dashboard() {
   const [darkMode, setDarkMode] = useState(true);
   const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig | null>(null);
   const [uploadedData, setUploadedData] = useState<UploadedData | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const colors = dashboardConfig
     ? COLOR_SCHEMES[dashboardConfig.colorScheme] || COLOR_SCHEMES.corporate
     : COLOR_SCHEMES.corporate;
+
+  // Save dashboard to localStorage for sharing
+  const saveDashboardToStorage = (config: DashboardConfig, data: UploadedData) => {
+    try {
+      localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify({ config, data, timestamp: Date.now() }));
+    } catch { /* storage full or unavailable */ }
+  };
+
+  // Load dashboard from URL or localStorage on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const dashboardParam = params.get('dashboard');
+    
+    if (dashboardParam) {
+      try {
+        const stored = localStorage.getItem(DASHBOARD_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.config && parsed.data) {
+            setDashboardConfig(parsed.config);
+            setUploadedData(parsed.data);
+            return;
+          }
+        }
+      } catch { /* invalid stored data */ }
+    }
+  }, []);
 
   const handleDashboardGenerated = (config: DashboardConfig, data: UploadedData) => {
     setDashboardConfig(config);
     setUploadedData(data);
     const url = `${window.location.origin}?dashboard=${encodeURIComponent(config.title)}`;
     setShareUrl(url);
+    saveDashboardToStorage(config, data);
   };
 
   const metricCards = useMemo(() => {
@@ -162,7 +193,7 @@ export function Dashboard() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50">
         <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-blue-600 flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
               <Zap size={20} className="text-white" />
             </div>
             <div>
@@ -207,8 +238,15 @@ export function Dashboard() {
       <div className="h-16" />
 
       <main className="max-w-7xl mx-auto p-6">
-        <div className="grid gap-6 grid-cols-1 xl:grid-cols-[1fr_420px]">
-          {/* Dashboard Area */}
+        <div className="grid gap-6 grid-cols-1 xl:grid-cols-[420px_1fr]">
+          {/* Chat Sidebar — Left */}
+          <div className="block">
+            <div className="sticky top-24">
+              <AIChat onDashboardGenerated={handleDashboardGenerated} />
+            </div>
+          </div>
+
+          {/* Dashboard Area — Right */}
           <div className="space-y-6 min-w-0">
             {dashboardConfig && uploadedData ? (
               <>
@@ -271,7 +309,7 @@ export function Dashboard() {
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04, type: 'spring', stiffness: 200 }}
-                      className="group bg-white dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl p-5 shadow-lg hover:shadow-xl border border-gray-200/50 dark:border-gray-800/50 hover:border-purple-500/20 dark:hover:border-purple-500/20 hover:-translate-y-0.5 transition-all duration-300"
+                      className="group bg-white dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl p-5 shadow-lg hover:shadow-xl border border-gray-200/50 dark:border-gray-800/50 hover:border-blue-500/20 dark:hover:border-blue-500/20 hover:-translate-y-0.5 transition-all duration-300"
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div className={`p-2 rounded-xl ${colors.iconBg} group-hover:scale-110 transition-transform duration-300`}>
@@ -325,7 +363,7 @@ export function Dashboard() {
                 className="flex flex-col items-center justify-center h-[600px] bg-white dark:bg-gray-900/80 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-12"
               >
                 <div className="mb-8">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-600 to-blue-600 flex items-center justify-center shadow-md">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md">
                     <Zap size={40} className="text-white" />
                   </div>
                 </div>
@@ -336,16 +374,16 @@ export function Dashboard() {
                   Upload your Excel or CSV file, and let the AI analyze your data. It will suggest the best KPIs, charts, and insights automatically.
                 </p>
                 <div className="flex items-center gap-2">
-                  {['Upload Data', 'AI Analyzes', 'Dashboard Ready'].map((step, i) => (
+                  {['1. Upload Data', '2. AI Summary', '3. Recommendations', '4. Business Logic & ML', '5. Generate'].map((step, i) => (
                     <div key={step} className="flex items-center gap-2">
-                      <div className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                      <div className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${
                         i === 1
-                          ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                          ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                       }`}>
                         {step}
                       </div>
-                      {i < 2 && <span className="text-gray-400 text-xs">→</span>}
+                      {i < 4 && <span className="text-gray-400 text-xs">→</span>}
                     </div>
                   ))}
                 </div>
@@ -353,12 +391,7 @@ export function Dashboard() {
             )}
           </div>
 
-          {/* Chat Sidebar */}
-          <div className="block">
-            <div className="sticky top-24">
-              <AIChat onDashboardGenerated={handleDashboardGenerated} />
-            </div>
-          </div>
+
         </div>
       </main>
 
@@ -380,7 +413,7 @@ export function Dashboard() {
               className="bg-gray-900 border border-gray-800 rounded-2xl p-6 max-w-md w-full shadow-xl"
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-600 to-blue-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
                   <Share2 size={20} className="text-white" />
                 </div>
                 <div>
@@ -394,14 +427,41 @@ export function Dashboard() {
                   type="text"
                   readOnly
                   value={shareUrl}
+                  data-share-input
                   className="flex-1 bg-transparent text-sm text-gray-300 focus:outline-none"
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                  onClick={(e) => {
+                    (e.target as HTMLInputElement).select();
+                    try {
+                      navigator.clipboard.writeText(shareUrl || '');
+                      setShareCopied(true);
+                      setTimeout(() => setShareCopied(false), 2000);
+                    } catch { /* fallback handled by button */ }
+                  }}
                 />
                 <button
-                  onClick={() => navigator.clipboard.writeText(shareUrl)}
-                  className="px-3 py-1.5 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(shareUrl || '');
+                      setShareCopied(true);
+                      setTimeout(() => setShareCopied(false), 2000);
+                    } catch {
+                      // Fallback for insecure contexts
+                      const input = document.querySelector<HTMLInputElement>('[data-share-input]');
+                      if (input) {
+                        input.select();
+                        document.execCommand('copy');
+                        setShareCopied(true);
+                        setTimeout(() => setShareCopied(false), 2000);
+                      }
+                    }
+                  }}
+                  className={`px-3 py-1.5 text-xs rounded-lg transition-all font-medium flex items-center gap-1 ${
+                    shareCopied
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
                 >
-                  Copy
+                  {shareCopied ? <><Check size={12} /> Copied</> : 'Copy'}
                 </button>
               </div>
             </motion.div>
