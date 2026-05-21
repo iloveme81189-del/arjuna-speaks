@@ -1,4 +1,3 @@
-import React from 'react';
 import { Funnel, FunnelChart as ReFunnelChart, Tooltip, ResponsiveContainer, LabelList, Cell } from 'recharts';
 
 interface FunnelData {
@@ -7,13 +6,13 @@ interface FunnelData {
   dropoff: number;
 }
 
-interface Props {
+interface FunnelChartProps {
   data: FunnelData[];
 }
 
 const COLORS = ['#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95'];
 
-export const FunnelChart: React.FC<<Props> = ({ data }) => {
+export function FunnelChart({ data }: FunnelChartProps) {
   const chartData = data.map((d, i) => ({
     name: d.stage,
     value: d.users,
@@ -43,4 +42,4 @@ export const FunnelChart: React.FC<<Props> = ({ data }) => {
       </ResponsiveContainer>
     </div>
   );
-};
+}
