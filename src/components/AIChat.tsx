@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useGroq } from '../hooks/useGroq';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,7 +10,11 @@ interface Message {
   timestamp: Date;
 }
 
-export const AIChat: React.FC<{ currentData: any }> = ({ currentData }) => {
+interface AIChatProps {
+  currentData: any;
+}
+
+export function AIChat({ currentData }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -112,4 +116,4 @@ export const AIChat: React.FC<{ currentData: any }> = ({ currentData }) => {
       </div>
     </div>
   );
-};
+}
