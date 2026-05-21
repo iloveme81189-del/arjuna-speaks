@@ -1,2 +1,14 @@
-// Central type exports - extend as your dashboard grows
+// UX Analytics Types
 export type { UXData, UXEvent } from '../hooks/useRealtimeData';
+
+// Dashboard Generator Types
+export type {
+  UploadedData,
+  MetricConfig,
+  ChartConfig,
+  DashboardConfig,
+  ChatMessage,
+  GroqModel,
+} from './dashboard';
+
+export { GROQ_MODELS } from './dashboard';

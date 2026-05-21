@@ -44,20 +44,20 @@ export function useRealtimeData() {
     })),
   };
 
-  const [data, setData] = useState(initialData);
-  const [events, setEvents] = useState([]);
-  const intervalRef = useRef(null);
+  const [data, setData] = useState<UXData>(initialData);
+  const [events, setEvents] = useState<UXEvent[]>([]);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      setData((prev: any) => ({
+      setData((prev) => ({
         ...prev,
         activeUsers: prev.activeUsers + Math.floor(Math.random() * 10 - 3),
         ctr: +(prev.ctr + (Math.random() * 0.4 - 0.2)).toFixed(2),
       }));
 
       const elements = ['Hero CTA', 'Nav Menu', 'Product Card', 'Footer', 'Search Bar'];
-      const types = ['click', 'scroll', 'convert', 'error'];
+      const types = ['click', 'scroll', 'convert', 'error'] as const;
       
       const newEvent = {
         id: Math.random().toString(36).substr(2, 9),
@@ -66,7 +66,7 @@ export function useRealtimeData() {
         timestamp: new Date(),
       };
 
-      setEvents((prev: any) => [newEvent, ...prev].slice(0, 20));
+      setEvents((prev) => [newEvent, ...prev].slice(0, 20));
     }, 2000);
 
     return () => {

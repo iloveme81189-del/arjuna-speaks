@@ -1,21 +1,175 @@
 import { useState, useCallback } from 'react';
+import { GroqModel, GROQ_MODELS, UploadedData, DashboardConfig } from '../types/dashboard';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+function getSystemPrompt(type: 'chat' | 'analyze' | 'dashboard'): string {
+  switch (type) {
+    case 'dashboard':
+      return `You are a senior data analyst and professional dashboard designer. Given uploaded data, generate a comprehensive dashboard configuration.
+
+Available chart types (choose the BEST type for the data):
+
+BAR & COLUMN: "bar", "stacked-bar", "clustered-bar", "stacked-column", "clustered-column", "100-stacked-bar", "100-stacked-column"
+LINE & AREA: "line", "step-line", "smooth-line", "area", "stacked-area", "100-stacked-area"
+COMBO: "line-stacked-column", "line-clustered-column"
+PART-TO-WHOLE: "pie", "donut", "treemap"
+TABULAR: "data-table", "heatmap-matrix", "data-bar-matrix", "icon-matrix"
+KPI: "single-value", "multi-row-card", "radial-gauge", "target-kpi"
+GEOGRAPHIC: "bubble-map", "filled-map"
+ANALYTICAL: "scatter", "bubble-chart", "waterfall", "funnel", "ribbon"
+INTERACTIVE: "list-slicer", "dropdown-slicer", "date-range-slider"
+EXTENDED: "radar", "heatmap", "gantt", "bullet", "calendar-heatmap", "word-cloud"
+
+Available color schemes (choose the BEST one for the data context):
+- "corporate" — Teal/Blue professional palette. Use for executive dashboards, financial reports, business intelligence.
+- "accessible" — High-contrast WCAG-compliant. Use for accessibility-focused or public-facing dashboards.
+- "modern" — Indigo/Purple/Sky vibrant palette. Use for SaaS metrics, tech startups, product analytics.
+- "semantic" — Green/Red/Amber financial colors. Use for KPI tracking, P&L, budget vs actual.
+- "pastels" — Soft pink/purple/blue pastels. Use for multi-slice charts (pie, donut, stacked bar) with many categories.
+- "chronological" — Blue sequential gradient. Use for time-series data, trend lines, historical comparisons.
+- "vintage" — Amber/emerald retro palette. Use for infographics, historical data, classic reports.
+- "heatmap" — Slate/gray monochrome. Use for density maps, correlation matrices, data tables.
+- "glow" — Sky/violet bright on dark. Use for dark-mode dashboards, operational monitoring.
+- "geographic" — Orange gradient from light to deep. Use for regional maps, density choropleths.
+
+Chart-type-specific color guidance (use these for reference when generating chart configs):
+- Bar/Column charts: Use the colorScheme's primary colors for single-series, multiple colors for multi-series
+- Pie/Donut charts: Use distinct colors from the colorScheme (one per slice, avoid adjacent similar hues)
+- Line/Area charts: Use a single strong color from the scheme for the line; fill with lighter opacity
+- Treemap: Use gradient progression of the colorScheme from light to dark for hierarchy
+- Scatter/Bubble: Use vibrant contrast colors for different groups
+- Heatmap: Use sequential intensity from light to dark within the scheme
+- Funnel: Use a single hue progressively getting darker at each stage
+- Gauge/Bullet: Use semantic colors (green for good, red for bad) from the semantic scheme
+- Data tables: Use minimal slate/gray tones, highlight headers with scheme's primary
+
+CRITICAL — The dashboard MUST suggest the following in the dataSummary:
+1. KEY KPIs — Identify the 3-5 most important metrics for the business context. Explain why each matters.
+2. INSIGHTS — What patterns, trends, outliers or correlations exist in the data? Be specific with numbers.
+3. PREDICTIONS — Based on trends in the data, what is likely to happen next? Give specific forecast estimates.
+4. RECOMMENDED PRESENTATIONS — What chart types best represent different aspects of this data? Mention multiple and explain why each is suited.
+
+The dataSummary should be 4-6 sentences covering all 4 points above.
+
+Return a valid JSON object (NO markdown, NO code blocks, just raw JSON) with this exact structure:
+{
+  "title": "Dashboard Title",
+  "description": "Brief description of what this data shows",
+  "metrics": [
+    {
+      "title": "Metric Name",
+      "value": "EXPRESSION:sum|avg|count|min|max:columnName",
+      "change": 12.5,
+      "icon": "trending-up|users|dollar-sign|activity|bar-chart|pie-chart|target|clock|star|database",
+      "color": "#118D95",
+      "suffix": "%" or "" or "$",
+      "trend": "up" or "down" or "stable"
+    }
+  ],
+  "charts": [
+    {
+      "id": "chart1",
+      "type": "bar",
+      "title": "Chart Title",
+      "dataKeyX": "categoryColumn",
+      "dataKeyY": "valueColumn or ["col1","col2"] for multi-series",
+      "groupBy": "optionalGroupColumn",
+      "description": "What this chart shows",
+      "stacked": false,
+      "showLegend": true
+    }
+  ],
+  "layout": "2col",
+  "colorScheme": "corporate|accessible|modern|semantic|pastels|chronological|vintage|heatmap|glow|geographic",
+  "dataSummary": "4-6 sentence summary covering KPIs, insights, predictions, and recommended chart types",
+  "filters": ["optional", "filter", "columns"]
+}
+
+Rules:
+- For metrics, use "EXPRESSION:sum:columnName" for sums, "EXPRESSION:avg:columnName" for averages, "EXPRESSION:count:*" for count
+- Pick 3-6 meaningful KPIs — each with a (change) percentage showing trend direction
+- Pick 2-5 charts that best visualize the data structure
+- For categorical X axes with few categories: use bar/pie/donut
+- For time-series or sequential X axes: use line/area
+- For comparing parts of a whole: use pie/donut/treemap/100-stacked-bar
+- For comparing multiple values across categories: use bar/stacked-bar
+- For showing trends over time: use line/smooth-line/area
+- For showing distribution: use scatter/heatmap
+- For showing hierarchical data: use treemap/radar
+- For showing progress toward goals: use radial-gauge/bullet/target-kpi
+- Use meaningful, professional titles
+- Include colorScheme matching the data context
+- Always include trend direction (change %) for each metric to indicate KPI movement`;
+
+    case 'analyze':
+      return `You are a senior data analyst. Analyze the provided data and give actionable insights. Be concise and data-driven. Format with bullet points.
+
+For every analysis, ALWAYS include:
+1. KEY KPIs — The 3-5 most important metrics. Explain why each matters.
+2. INSIGHTS — Specific patterns, trends, outliers. Use actual numbers.
+3. PREDICTIONS — What is likely to happen next based on trends.
+4. RECOMMENDED VISUALIZATIONS — Which chart types would best represent each aspect.`;
+
+    default:
+      return `You are Arjuna Speaks, a professional AI data intelligence assistant. You are helpful, concise, and data-driven.
+
+When users ask about their data, ALWAYS:
+- Identify key KPIs and metrics that matter
+- Point out insights, trends, and outliers
+- Suggest predictions based on patterns
+- Recommend the best chart types to visualize different aspects
+- Keep responses professional and avoid hype
+
+If the user hasn't uploaded data yet, guide them to upload an Excel or CSV file using drag & drop or the attach button.
+
+Be thorough but concise. Use numbers and specifics.`;
+  }
+}
 
 export function useGroq() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const analyzeUX = useCallback(async (data: any, question?: string) => {
+  const sendMessage = useCallback(async (
+    message: string,
+    data?: UploadedData,
+    model: GroqModel = 'llama-3.3-70b-versatile',
+    type: 'chat' | 'analyze' | 'dashboard' = 'chat',
+  ): Promise<string | DashboardConfig | null> => {
+    if (!GROQ_API_KEY) {
+      setError('GROQ API key not configured. Set VITE_GROQ_API_KEY in your environment.');
+      return null;
+    }
+
     setLoading(true);
     setError(null);
 
-    const systemPrompt = `You are a senior UX researcher and data analyst. Analyze the provided UI/UX metrics and provide actionable insights. Be concise, data-driven, and suggest specific improvements. Format key points with bullet points.`;
+    let systemPrompt = getSystemPrompt(type);
+    let userContent = message;
 
-    const userContent = question 
-      ? `Data: ${JSON.stringify(data)}\n\nQuestion: ${question}`
-      : `Analyze this UI/UX data and provide key insights and recommendations:\n${JSON.stringify(data, null, 2)}`;
+    if (data) {
+      const dataPreview = {
+        fileName: data.fileName,
+        totalRows: data.totalRows,
+        totalCols: data.totalCols,
+        headers: data.headers,
+        numericColumns: data.numericColumns,
+        categoricalColumns: data.categoricalColumns,
+        sampleRows: data.rows.slice(0, 10),
+      };
+
+      if (type === 'dashboard') {
+        systemPrompt += `\n\nThe user uploaded "${data.fileName}" with ${data.totalRows} rows and ${data.totalCols} columns.
+Columns: ${data.headers.join(', ')}
+Numeric: ${data.numericColumns.join(', ') || 'none'}
+Categorical: ${data.categoricalColumns.join(', ') || 'none'}`;
+        userContent = `Generate a professional dashboard for this data. Return ONLY valid JSON.`;
+      } else {
+        userContent = `Data file: ${data.fileName}\nColumns: ${data.headers.join(', ')}\nSample (${data.totalRows} rows):\n${JSON.stringify(dataPreview.sampleRows, null, 2)}\n\nQuestion: ${message}`;
+      }
+    }
 
     try {
       const response = await fetch(GROQ_URL, {
@@ -25,20 +179,39 @@ export function useGroq() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model,
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: userContent }
+            { role: 'user', content: userContent },
           ],
-          temperature: 0.3,
-          max_tokens: 1024,
+          temperature: type === 'dashboard' ? 0.2 : 0.5,
+          max_tokens: type === 'dashboard' ? 2048 : 1024,
         }),
       });
 
-      if (!response.ok) throw new Error('Groq API error');
-      
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Groq API error (${response.status}): ${errText}`);
+      }
+
       const result = await response.json();
-      return result.choices[0].message.content;
+      const content = result.choices[0].message.content;
+
+      if (type === 'dashboard') {
+        try {
+          // Try to parse JSON, handling markdown-wrapped responses
+          let jsonStr = content.trim();
+          if (jsonStr.startsWith('```')) {
+            jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+          }
+          return JSON.parse(jsonStr) as DashboardConfig;
+        } catch {
+          // If parsing fails, return raw text
+          return content;
+        }
+      }
+
+      return content;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       return null;
@@ -47,5 +220,5 @@ export function useGroq() {
     }
   }, []);
 
-  return { analyzeUX, loading, error };
+  return { sendMessage, loading, error, availableModels: GROQ_MODELS };
 }
