@@ -397,7 +397,7 @@ export function AIChat({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-40 bg-black/40"
+            className="absolute inset-0 z-40 bg-gray-800/20"
             onClick={() => setShowSidebar(false)}
           />
         )}
@@ -411,14 +411,14 @@ export function AIChat({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -280, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="absolute left-0 top-0 bottom-0 w-[260px] z-50 bg-gray-950 border-r border-gray-800/50 flex flex-col"
+            className="absolute left-0 top-0 bottom-0 w-[260px] z-50 bg-white border-r border-gray-200 shadow-xl flex flex-col"
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800/50">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Sessions</span>
               {sessions.length < 6 && (
                 <button
                   onClick={() => { createSession(); setShowSidebar(false); }}
-                  className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                  className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
                 >
                   <Plus size={16} />
                 </button>
@@ -427,20 +427,19 @@ export function AIChat({
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {sessions.map((s) => (
                 <div
-                  key={s.id}
-                  className={`group flex items-center gap-2 px-3 py-2 rounded-xl text-sm cursor-pointer transition-all ${
+                  key={s.id}                    className={`group flex items-center gap-2 px-3 py-2 rounded-xl text-sm cursor-pointer transition-all ${
                     s.id === activeSessionId
-                      ? 'bg-blue-600/20 text-blue-300 border border-blue-600/20'
-                      : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 border border-transparent'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700 border border-transparent'
                   }`}
                   onClick={() => { switchSession(s.id); setShowSidebar(false); }}
                 >
-                  <Bot size={14} className="flex-shrink-0 opacity-60" />
+                  <Bot size={14} className="flex-shrink-0 opacity-40" />
                   <span className="flex-1 truncate text-xs">{s.name}</span>
                   {sessions.length > 1 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); closeSession(s.id); }}
-                      className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-gray-700/50 transition-all"
+                      className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-gray-200/50 transition-all"
                     >
                       <X size={12} className="text-gray-500" />
                     </button>
@@ -897,7 +896,10 @@ export function AIChat({
             </button>
           </div>
           <p className="text-[10px] text-gray-400 text-center mt-2.5">
-            Arjuna Speaks may display inaccurate info. Verify critical data independently.
+            Arjuna Speaks may display inaccurate info. Verify critical data independently.<br />
+            <a href="https://www.flaticon.com/free-icons/fab" target="_blank" rel="noopener noreferrer" className="hover:text-gray-600 transition-colors">
+              Icons by Flaticon
+            </a>
           </p>
         </div>
       </div>
