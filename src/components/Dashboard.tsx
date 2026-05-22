@@ -171,11 +171,6 @@ export function Dashboard() {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
-  // Force white theme on initial load
-  useEffect(() => {
-    document.documentElement.classList.remove('dark');
-  }, []);
-
   const colors = dashboardConfig
     ? COLOR_SCHEMES[dashboardConfig.colorScheme] || COLOR_SCHEMES.corporate
     : COLOR_SCHEMES.corporate;

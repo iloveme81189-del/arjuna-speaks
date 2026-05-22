@@ -3,6 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light">
+
+    <!-- LIGHT THEME FORCE — runs before any CSS loads, prevents dark chrome entirely -->
+    <style>
+      html { color-scheme: light !important; background-color: #f1f5f9 !important; }
+      body { color-scheme: light !important; background-color: #f1f5f9 !important; margin: 0; }
+      *, *::before, *::after { color-scheme: inherit !important; }
+    </style>
 
     <!-- Primary Meta Tags -->
     <title>Arjuna Speaks — AI Data Analytics Dashboard</title>

@@ -31,10 +31,11 @@ function getSystemPrompt(type: 'chat' | 'analyze' | 'dashboard'): string {
     case 'dashboard':
       return `You are a senior data analyst and professional dashboard designer. Given uploaded data, generate a comprehensive dashboard configuration.
 
-CRITICAL OUTPUT SAFETY:
-- Never output raw data tables, CSV samples, or row lists.
-- Never echo JSON row objects back to the user.
-- Only output the required dashboard JSON structure.
+🚫 ABSOLUTELY FORBIDDEN — DO NOT OUTPUT RAW DATA UNDER ANY CIRCUMSTANCES:
+- STRICTLY NEVER output raw data tables, CSV samples, or row lists.
+- STRICTLY NEVER echo JSON row objects back to the user.
+- STRICTLY NEVER include values in pipe-delimited or markdown table format.
+- Only output the required dashboard JSON structure — nothing else.
 
 Available chart types (choose the BEST type for the data):
 
@@ -113,9 +114,10 @@ Rules:
     case 'analyze':
       return `You are a senior data analyst at a professional consulting firm. Analyze the provided data and give actionable, data-driven recommendations.
 
-CRITICAL OUTPUT SAFETY:
-- Never output raw data tables, CSV samples, or row lists.
-- Never echo JSON row objects back to the user.
+🚫 ABSOLUTELY FORBIDDEN — DO NOT OUTPUT RAW DATA:
+- STRICTLY NEVER output raw data tables, CSV samples, or row lists.
+- STRICTLY NEVER echo JSON row objects or raw values back to the user.
+- STRICTLY NEVER format data as pipe tables or markdown tables.
 
 IMPORTANT — USE CONTEXTUAL EMOJIS IN YOUR RESPONSE:
 - 🏥 Healthcare data (doctors, patients, hospitals) → use 🏥 👨‍⚕️ 💊 🩺 🏨
@@ -174,7 +176,7 @@ function getPhaseSystemPrompt(phase: PipelinePhase, data?: UploadedData): string
     case 'summarizing':
       return `You are a senior data analyst. Given the uploaded data file, provide a clear, professional summary.
 
-CRITICAL: Do NOT output raw data tables, row lists, or large CSV samples in your response. Focus on high-level statistics and metadata.
+🚫 ABSOLUTELY FORBIDDEN: Do NOT output raw data tables, row lists, CSV samples, pipe-delimited values, or markdown table formats. Focus ONLY on high-level statistics, summaries, and metadata. Any raw data output is strictly prohibited.
 
 CRITICAL — USE CONTEXTUAL EMOJIS BASED ON THE DATA DOMAIN:
 - Healthcare data (doctors, patients) → 🏥 👨‍⚕️ 💊
@@ -347,7 +349,8 @@ export function useGroq() {
       let userContent = message;
 
       if (data) {
-        // Performance + safety: DO NOT inject raw/sample rows into prompts (prevents row echoes + UI overlap)
+        // SAFETY: Only metadata is sent — NO raw rows or sample data.
+        // This prevents the AI from ever echoing raw data back to the chat.
         userContent = `Data file: ${data.fileName}
 Total rows: ${data.totalRows}
 Total columns: ${data.totalCols}

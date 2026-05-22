@@ -67,7 +67,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.8} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <Tooltip content={<TooltipContent />} />
@@ -94,7 +94,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.8} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <Tooltip content={<TooltipContent />} />
@@ -121,7 +121,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} stackOffset="expand">
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.8} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} />
             <Tooltip content={<TooltipContent />} />
@@ -139,7 +139,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.8} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <Tooltip content={<TooltipContent />} />
@@ -164,7 +164,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} stackOffset={type === '100-stacked-area' ? 'expand' : undefined}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.8} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <Tooltip content={<TooltipContent />} />
@@ -192,7 +192,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.8} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <Tooltip content={<TooltipContent />} />
@@ -244,7 +244,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
             data={chartData}
             dataKey="value"
             nameKey="name"
-            stroke="#1e293b"
+            stroke="#e5e7eb"
             fill={colors[0]}
             content={<CustomTreemapContent colors={colors} />}
           >
@@ -263,7 +263,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.8} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} name={config.dataKeyX} />
             <YAxis dataKey="value" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} name={String(config.dataKeyY)} />
             <Tooltip content={
@@ -313,7 +313,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={funnelData} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.4} />
             <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} width={80} />
             <Tooltip content={<TooltipContent />} />
@@ -355,7 +355,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.6} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <Tooltip content={<TooltipContent />} />
@@ -596,7 +596,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.4} />
             <XAxis type="number" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} />
             <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} width={70} />
             <Tooltip content={<TooltipContent />} />
@@ -639,7 +639,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.8} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} />
             <Tooltip content={<TooltipContent />} />
@@ -759,7 +759,7 @@ function CustomTreemapContent(props: any) {
   const color = colors?.[index % (colors?.length || 5)] || '#8b5cf6';
   return (
     <g>
-      <rect x={x} y={y} width={width} height={height} style={{ fill: color, stroke: '#1e293b', strokeWidth: 2 / (depth + 1) }} />
+      <rect x={x} y={y} width={width} height={height} style={{ fill: color, stroke: '#e5e7eb', strokeWidth: 2 / (depth + 1) }} />
       {width > 30 && height > 20 && (
         <text x={x + width / 2} y={y + height / 2} textAnchor="middle" fill="#fff" fontSize={Math.min(width / 6, 12)}>
           {String(name).slice(0, 6)}

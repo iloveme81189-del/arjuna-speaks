@@ -92,6 +92,60 @@ export function AIChat({
     return idx >= 0 ? idx : -1;
   };
 
+  /**
+   * NUCLEAR FILTER v2 — Strip ANY raw data content from AI responses.
+   * Multiple defense layers to catch every possible data preview format.
+   */
+  const sanitizeResponse = (content: string): string => {
+    let cleaned = content;
+
+    // LAYER 1: Block entire response if >75% of lines are data-like (tabular flood)
+    const lines = cleaned.split('\n').filter(l => l.trim().length > 0);
+    if (lines.length >= 4) {
+      const dataLines = lines.filter(l => {
+        const t = l.trim();
+        // Lines that are predominantly raw data (not legitimate analysis text)
+        if (/^\d+[,\.\s]+\d+[,\.\s]+\d+/.test(t)) return true; // 3+ numbers with delimiters
+        if (/\|.*\|.*\|/.test(t)) return true; // pipe-delimited
+        if (t.startsWith('|') || t.endsWith('|')) return true; // pipes at edges
+        if (/^[\d,\.,\s,\-]+$/.test(t) && t.length > 5) return true; // purely numeric line
+        if (/^\s*\{[^}]+\}\s*$/.test(t)) return true; // standalone JSON object
+        if (/^\s*\[.*\]\s*$/.test(t)) return true; // array
+        return false;
+      });
+      if (dataLines.length / lines.length > 0.75) {
+        return '*This analysis emphasizes key metrics and strategic recommendations rather than raw tabular data. Focus on the insights and actionable next steps outlined in the summary above.*';
+      }
+    }
+
+    // LAYER 2: Remove pipe-delimited table structures
+    cleaned = cleaned.replace(/^\|[^|]+\|[^|]+\|.*$/gm, '');
+    cleaned = cleaned.replace(/^\|[\s-:|]+\|$/gm, '');
+    cleaned = cleaned.replace(/^[^\n]*\|[^\n]*\|[^\n]*\|[^\n]*\|.*$/gm, '');
+
+    // LAYER 3: Remove purely numeric/csv-like data rows
+    cleaned = cleaned.replace(/^[\d,\.\s\t\-]+$/gm, '');
+
+    // LAYER 4: Remove JSON arrays/objects (data dumps)
+    cleaned = cleaned.replace(/\[\{[^}]+\},?\s*\]/g, '');
+    cleaned = cleaned.replace(/^\s*\{[^}]+\}\s*$/gm, '');
+    cleaned = cleaned.replace(/^\s*\[.*\]\s*$/gm, '');
+
+    // LAYER 5: Block 3+ consecutive data-like lines
+    cleaned = cleaned.replace(/((?:^.*?(?:\d+[,|\t].*)\n?){3,})/gm, '\n*[tabular data omitted]*\n');
+
+    // LAYER 6: Block lines starting with numbers followed by delimiters (CSV data rows)
+    cleaned = cleaned.replace(/^\d+[,\t|].*$/gm, '');
+
+    // LAYER 7: Remove standalone space-aligned data columns (3+ spaces with numbers on both sides)
+    cleaned = cleaned.replace(/^.*?\d+[\s]{3,}\d+.*$/gm, '');
+
+    // Clean up excessive blank lines
+    cleaned = cleaned.replace(/\n{4,}/g, '\n\n');
+
+    return cleaned.trim();
+  };
+
   /** Parse AI analysis response into 3 structured sections */
   const parseAnalysisSections = (content: string): AnalysisSection[] | undefined => {
     const sectionTitles = ['Recommendations', 'Insights', 'Actions'];
@@ -152,11 +206,12 @@ export function AIChat({
     );
 
     if (summaryResponse && typeof summaryResponse === 'string') {
-      setSummaryContent(summaryResponse);
+      const cleaned = sanitizeResponse(summaryResponse);
+      setSummaryContent(cleaned);
       const summaryMsg: ChatMessage = {
         id: generateId(),
         role: 'assistant',
-        content: `## 📊 Data Summary\n\n${summaryResponse}`,
+        content: `## 📊 Data Summary\n\n${cleaned}`,
         timestamp: new Date(),
       };
       addMessage(activeSessionId, summaryMsg);
@@ -173,12 +228,13 @@ export function AIChat({
     );
 
     if (recommendResponse && typeof recommendResponse === 'string') {
-      setRecommendationsContent(recommendResponse);
-      const sections = parseAnalysisSections(recommendResponse);
+      const cleaned = sanitizeResponse(recommendResponse);
+      setRecommendationsContent(cleaned);
+      const sections = parseAnalysisSections(cleaned);
       const recommendMsg: ChatMessage = {
         id: generateId(),
         role: 'assistant',
-        content: `## 🎯 Dashboard Recommendations\n\n${recommendResponse}`,
+        content: `## 🎯 Dashboard Recommendations\n\n${cleaned}`,
         timestamp: new Date(),
         metadata: sections ? { type: 'analysis', sections } : undefined,
       };
@@ -229,11 +285,12 @@ export function AIChat({
     );
 
     if (mlResponse && typeof mlResponse === 'string') {
-      setMlResultContent(mlResponse);
+      const cleaned = sanitizeResponse(mlResponse);
+      setMlResultContent(cleaned);
       const mlMsg: ChatMessage = {
         id: generateId(),
         role: 'assistant',
-        content: `## 🔬 ML Processing Complete\n\n${mlResponse}`,
+        content: `## 🔬 ML Processing Complete\n\n${cleaned}`,
         timestamp: new Date(),
       };
       addMessage(activeSessionId, mlMsg);
@@ -315,7 +372,7 @@ export function AIChat({
       const aiMsg: ChatMessage = {
         id: generateId(),
         role: 'assistant',
-        content: response,
+        content: sanitizeResponse(response),
         timestamp: new Date(),
       };
       addMessage(activeSessionId, aiMsg);
@@ -342,10 +399,12 @@ export function AIChat({
 
     if (response && typeof response === 'object' && 'title' in response) {
       const config = response as DashboardConfig;
+      const safeDataSummary = sanitizeResponse(config.dataSummary || '');
+      const safeDescription = sanitizeResponse(config.description || '');
       const aiMsg: ChatMessage = {
         id: generateId(),
         role: 'assistant',
-        content: `## ${config.title}\n${config.description || ''}\n\n${config.dataSummary || ''}`,
+        content: `## ${config.title}\n${safeDescription}\n\n${safeDataSummary}`,
         timestamp: new Date(),
         metadata: { type: 'dashboard', dashboardConfig: config },
       };

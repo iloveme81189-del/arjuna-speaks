@@ -25,7 +25,7 @@ export function FunnelChart(props: FunnelChartProps) {
       <ResponsiveContainer width="100%" height="100%">
         <ReFunnelChart>
           <Tooltip
-            contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }}
+            contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px', color: '#1f2937' }}
             formatter={(value: number) => [`${value.toLocaleString()} users`, 'Count']}
           />
           <Funnel
