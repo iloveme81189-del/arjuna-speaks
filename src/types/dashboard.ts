@@ -1,3 +1,12 @@
+export interface DataContextInfo {
+  domain: string;
+  label: string;
+  emoji: string;
+  iconKey: string;
+  accentColor: string;
+  description: string;
+}
+
 export interface UploadedData {
   fileName: string;
   headers: string[];
@@ -6,6 +15,7 @@ export interface UploadedData {
   totalCols: number;
   numericColumns: string[];
   categoricalColumns: string[];
+  context?: DataContextInfo;
 }
 
 export interface MetricConfig {
@@ -65,7 +75,7 @@ export const CHART_CATEGORIES: { name: string; types: ChartType[] }[] = [
   },
   {
     name: 'Tabular & Grid',
-    types: ['data-table', 'matrix', 'heatmap-matrix', 'data-bar-matrix', 'icon-matrix'],
+    types: ['data-table', 'heatmap-matrix', 'data-bar-matrix', 'icon-matrix'],
   },
   {
     name: 'KPI & Metric Cards',
@@ -119,7 +129,6 @@ export interface DashboardConfig {
   charts: ChartConfig[];
   layout: '2col' | '3col' | 'full';
   colorScheme: ColorScheme;
-  darkMode: boolean;
   dataSummary: string;
   filters?: string[];
 }

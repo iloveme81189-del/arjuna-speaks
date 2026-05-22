@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGroq } from '../hooks/useGroq';
 import { FileUpload } from './FileUpload';
-import { DataPreview } from './DataPreview';
 import {
   Send, Bot, User, Paperclip, Cloud,
   Sparkles, FileSpreadsheet, Copy, ThumbsUp, ThumbsDown,
   Menu, Plus, X, Check, ChevronDown, ExternalLink,
   FileText, Lightbulb, BrainCircuit, LayoutDashboard,
-  ArrowRight, Loader2, RefreshCw,
+  ArrowRight, Loader2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -19,12 +18,11 @@ import { useChatStore } from '../store/chatStore';
 
 interface AIChatProps {
   onDashboardGenerated?: (config: DashboardConfig, data: UploadedData) => void;
-  onPreviewDataRequested?: () => void;
   standalone?: boolean;
 }
 
 const PIPELINE_STEPS: { phase: PipelinePhase; label: string; icon: React.ReactNode }[] = [
-  { phase: 'summarizing', label: 'Summarize Data', icon: <FileText size={14} /> },
+  { phase: 'summarizing', label: 'Analyze Data', icon: <FileText size={14} /> },
   { phase: 'recommending', label: 'Recommendations', icon: <Lightbulb size={14} /> },
   { phase: 'awaiting-logic', label: 'Business Logic', icon: <BrainCircuit size={14} /> },
   { phase: 'ml-processing', label: 'ML Processing', icon: <Loader2 size={14} /> },
@@ -33,14 +31,13 @@ const PIPELINE_STEPS: { phase: PipelinePhase; label: string; icon: React.ReactNo
 ];
 
 const PHASE_LABELS: Record<string, string> = {
-  summarizing: 'Summarizing data...',
+  summarizing: 'Analyzing data...',
   recommending: 'Generating recommendations...',
   'ml-processing': 'Applying ML processing...',
 };
 
 export function AIChat({
   onDashboardGenerated,
-  onPreviewDataRequested,
   standalone = false,
 }: AIChatProps) {
   const {
@@ -143,12 +140,12 @@ export function AIChat({
   const runAnalysisPipeline = useCallback(async (data: UploadedData, file: File) => {
     if (!activeSessionId) return;
 
-    // Phase 1: Summarize
+    // Phase 1: Summarize - Show concise insights, NOT raw data
     setPipelinePhase('summarizing');
     setPipelineLoading(true);
 
     const summaryResponse = await sendMessage(
-      'Provide a high-level executive summary of this data. DO NOT include raw data tables or lists of rows. Focus on: 1. Statistical highlights 2. Data quality 3. Recommended column transformations for visualization.',
+      'Provide a high-level executive summary of this data. DO NOT include raw data tables or lists of rows. Focus on: 1. Key statistical highlights 2. Data quality assessment 3. Recommended column transformations for visualization.',
       data,
       selectedModel,
       'summarizing'
@@ -262,7 +259,7 @@ export function AIChat({
       const shareMsg: ChatMessage = {
         id: generateId(),
         role: 'assistant',
-        content: `### 🎉 Report Finished & Stored\nYour professional dashboard is now live and stored in your Google Drive 'Reports' folder.\n\n**Shareable Links:**\n1. 📂 Google Drive Link\n2. 🔗 Public Dashboard Link`,
+        content: `### 🎉 Report Finished & Stored\nYour professional dashboard is now live and stored in your Google Drive 'Reports' folder.\n\n**Shareable Links:**\n1. 📂 Google Drive Link: ${driveFile.webViewLink}\n2. 🔗 Public Dashboard: ${dashboardUrl}`,
         timestamp: new Date(),
       };
       addMessage(activeSessionId, shareMsg);
@@ -280,9 +277,20 @@ export function AIChat({
     const fileMsg: ChatMessage = {
       id: generateId(),
       role: 'system',
-      content: `📎 Uploaded **${data.fileName}** — ${data.totalRows} rows, ${data.totalCols} columns`,
+      content: `${data.context?.emoji || '📎'} Uploaded **${data.fileName}** — ${data.totalRows} rows, ${data.totalCols} columns`,
       timestamp: new Date(),
     };
+
+    // Add an additional context-aware welcome message
+    if (data.context && data.context.domain !== 'general') {
+      const contextMsg: ChatMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: `🔍 **Detected Domain: ${data.context.emoji} ${data.context.label}**\n\n${data.context.description}\n\nI'll analyze this with relevant domain expertise. Ask me anything or say "generate dashboard" when ready.`,
+        timestamp: new Date(),
+      };
+      addMessage(activeSessionId, contextMsg);
+    }
     addMessage(activeSessionId, fileMsg);
 
     // Run the full analysis pipeline
@@ -302,9 +310,6 @@ export function AIChat({
     };
     addMessage(activeSessionId, userMsg);
 
-    // Light-theme + UX rule:
-    // Never auto-generate dashboards from chat text.
-    // Dashboard generation must happen ONLY via the explicit "Preview Dashboard" button.
     const response = await sendMessage(text, uploadedData || undefined, selectedModel, 'chat');
     if (response && typeof response === 'string') {
       const aiMsg: ChatMessage = {
@@ -406,7 +411,7 @@ export function AIChat({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -280, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="absolute left-0 top-0 bottom-0 w-[260px] z-50 bg-gray-950 dark:bg-gray-950 border-r border-gray-800/50 flex flex-col"
+            className="absolute left-0 top-0 bottom-0 w-[260px] z-50 bg-gray-950 border-r border-gray-800/50 flex flex-col"
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800/50">
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Sessions</span>
@@ -447,12 +452,12 @@ export function AIChat({
         )}
       </AnimatePresence>
 
-      {/* Header — Professional */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-gray-800/50 flex-shrink-0 bg-white dark:bg-gray-950">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 flex-shrink-0 bg-white">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSidebar(true)}
-            className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+            className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors"
           >
             <Menu size={18} />
           </button>
@@ -460,7 +465,7 @@ export function AIChat({
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
               <Bot size={14} className="text-white" />
             </div>
-            <span className="text-sm font-medium text-gray-800 dark:text-gray-100">Arjuna Speaks</span>
+            <span className="text-sm font-medium text-gray-800">Arjuna Speaks</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -468,7 +473,7 @@ export function AIChat({
           <div className="relative">
             <button
               onClick={() => setShowModelPicker(!showModelPicker)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-gray-500 hover:bg-gray-100 transition-colors"
             >
               <Bot size={11} />
               {GROQ_MODELS.find(m => m.id === selectedModel)?.name || selectedModel}
@@ -477,7 +482,7 @@ export function AIChat({
             {showModelPicker && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowModelPicker(false)} />
-                <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 py-1 overflow-hidden">
+                <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1 overflow-hidden">
                   <div className="px-3 py-1.5 text-[9px] font-semibold text-gray-400 uppercase tracking-wider">Free Models</div>
                   {GROQ_MODELS.map((m) => (
                     <button
@@ -485,8 +490,8 @@ export function AIChat({
                       onClick={() => { setSelectedModel(m.id); setShowModelPicker(false); }}
                       className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${
                         m.id === selectedModel
-                          ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-medium'
-                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                          ? 'bg-gray-100 text-gray-900 font-medium'
+                          : 'text-gray-600 hover:bg-gray-50'
                       }`}
                     >
                       <span className="flex-1 min-w-0">
@@ -507,7 +512,7 @@ export function AIChat({
           </div>
 
           {uploadedData && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-[10px] border border-blue-200 dark:border-blue-800/30">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 text-blue-700 text-[10px] border border-blue-200">
               <FileSpreadsheet size={12} />
               <span className="truncate max-w-[50px]">{uploadedData.fileName}</span>
             </div>
@@ -517,7 +522,7 @@ export function AIChat({
               href={driveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 text-[10px] border border-green-200 dark:border-green-800/30 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-50 text-green-700 text-[10px] border border-green-200 hover:opacity-80 transition-opacity"
               title="View on Google Drive"
             >
               <Cloud size={11} />
@@ -534,14 +539,14 @@ export function AIChat({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="px-4 pt-3 pb-2 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20 border-b border-blue-200/50 dark:border-blue-800/30"
+            className="px-4 pt-3 pb-2 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border-b border-blue-200/50"
           >
             <div className="max-w-2xl mx-auto">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Analysis Pipeline
                 </span>
-                <span className="text-[10px] text-blue-500 dark:text-blue-400 font-medium">
+                <span className="text-[10px] text-blue-500 font-medium">
                   {pipelinePhase === 'awaiting-logic' ? 'Action Required' :
                    pipelinePhase === 'dashboard-ready' ? 'Complete' : 'In Progress'}
                 </span>
@@ -558,8 +563,8 @@ export function AIChat({
                           isComplete
                             ? 'bg-blue-600 text-white shadow-sm'
                             : isActive
-                            ? 'bg-blue-600 text-white ring-2 ring-blue-300 dark:ring-blue-500 shadow-sm'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
+                            ? 'bg-blue-600 text-white ring-2 ring-blue-300 shadow-sm'
+                            : 'bg-gray-200 text-gray-400'
                         }`}>
                           {isComplete ? (
                             <Check size={13} />
@@ -574,16 +579,16 @@ export function AIChat({
                             isComplete
                               ? 'bg-blue-500'
                               : isActive
-                              ? 'bg-blue-300 dark:bg-blue-600'
-                              : 'bg-gray-200 dark:bg-gray-700'
+                              ? 'bg-blue-300'
+                              : 'bg-gray-200'
                           }`} />
                         )}
                       </div>
                       <span className={`text-[8px] mt-1 text-center font-medium transition-colors duration-300 ${
                         isComplete
-                          ? 'text-blue-600 dark:text-blue-400'
+                          ? 'text-blue-600'
                           : isActive
-                          ? 'text-blue-600 dark:text-blue-300'
+                          ? 'text-blue-600'
                           : 'text-gray-400'
                       } ${isActive && pipelinePhase === 'awaiting-logic' ? 'animate-pulse' : ''}`}>
                         {step.label}
@@ -597,7 +602,7 @@ export function AIChat({
         )}
       </AnimatePresence>
 
-      {/* Messages — Centered like Gemini */}
+      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 py-8 scroll-smooth">
         <div className="max-w-2xl mx-auto space-y-6">
           {messages.length === 0 && !loading && !uploadedData && (
@@ -610,14 +615,14 @@ export function AIChat({
                 <Bot size={32} className="text-white" />
               </div>
               <div className="space-y-4 px-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">👋 Welcome to Arjuna Speaks!</h2>
-                <div className="text-sm text-gray-500 dark:text-gray-400 space-y-4 max-w-sm mx-auto">
-                  <p className="font-medium text-gray-700 dark:text-gray-300">Get started:</p>
+                <h2 className="text-xl font-bold text-gray-900">👋 Welcome to Arjuna Speaks!</h2>
+                <div className="text-sm text-gray-500 space-y-4 max-w-sm mx-auto">
+                  <p className="font-medium text-gray-700">Get started:</p>
                   <ul className="text-left space-y-3 ml-4">
                     <li className="flex items-start gap-2"><span>•</span> Upload an Excel or CSV file (drag & drop or click)</li>
-                    <li className="flex items-start gap-2"><span>•</span> Ask questions about your data</li>
-                    <li className="flex items-start gap-2"><span>•</span> Say "generate dashboard" for visualizations</li>
-                    <li className="flex items-start gap-2"><span>•</span> The AI will suggest KPIs, insights, and chart types</li>
+                    <li className="flex items-start gap-2"><span>•</span> The AI automatically analyzes and suggests KPIs & insights</li>
+                    <li className="flex items-start gap-2"><span>•</span> Add business logic or ask questions about your data</li>
+                    <li className="flex items-start gap-2"><span>•</span> Click <strong>Preview Dashboard</strong> to generate visualizations</li>
                   </ul>
                 </div>
               </div>
@@ -633,53 +638,54 @@ export function AIChat({
               >
                 {msg.role === 'system' ? (
                   <div className="flex justify-center">
-                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30 text-xs text-blue-700 dark:text-blue-300 shadow-sm">
+                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs text-blue-700 shadow-sm">
                       {msg.content}
                     </div>
                   </div>
                 ) : msg.role === 'user' ? (
                   <div className="flex justify-end">
                     <div className="flex gap-2 max-w-[75%] items-end">
-                      <div className="px-4 py-2.5 rounded-2xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm leading-relaxed">
+                      <div className="px-4 py-2.5 rounded-2xl bg-gray-900 text-white text-sm leading-relaxed">
                         <div className="whitespace-pre-wrap">{msg.content}</div>
                       </div>
-                      <div className="w-7 h-7 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                        <User size={13} className="text-white dark:text-gray-200" />
+                      <div className="w-7 h-7 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+                        <User size={13} className="text-white" />
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="flex gap-3 max-w-[85%]">
-                    <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                      <Bot size={13} className="text-gray-600 dark:text-gray-300" />
+                    <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <Bot size={13} className="text-gray-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 text-sm leading-relaxed border border-gray-100 dark:border-gray-700/30 overflow-hidden">
-                        <div className="prose prose-sm dark:prose-invert max-w-full whitespace-pre-wrap overflow-x-auto">
+                      <div className="px-4 py-3 rounded-2xl bg-gray-50 text-gray-800 text-sm leading-relaxed border border-gray-100 overflow-hidden">
+                        {/* Never show raw data tables - only processed insights */}
+                        <div className="prose prose-sm max-w-full whitespace-pre-wrap overflow-x-auto">
                           {msg.content}
                         </div>
                         {msg.metadata?.type === 'dashboard' && msg.metadata.dashboardConfig && (
-                          <div className="mt-2.5 flex items-center gap-2 text-xs text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800/30">
+                          <div className="mt-2.5 flex items-center gap-2 text-xs text-blue-500 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
                             <Sparkles size={12} />
-                            Dashboard generated — view it on the left panel
+                            Dashboard generated — view it on the right panel
                           </div>
                         )}
                         {/* 3-Cards for analysis responses */}
                         {msg.metadata?.type === 'analysis' && msg.metadata.sections && (
                           <div className="mt-4 flex flex-col gap-3">
                             {msg.metadata.sections.map((section, idx) => (
-                              <div key={idx} className="p-4 rounded-xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700/50 shadow-sm transition-all hover:shadow-md">
+                              <div key={idx} className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm transition-all hover:shadow-md">
                                 <div className="flex items-center gap-1.5 mb-2">
                                   <div className={`w-2.5 h-2.5 rounded-full ${
                                     idx === 0 ? 'bg-blue-500' : idx === 1 ? 'bg-indigo-500' : 'bg-violet-500'
                                   }`} />
                                   <span className={`text-[10px] font-semibold uppercase tracking-wider ${
-                                    idx === 0 ? 'text-blue-600 dark:text-blue-400' : idx === 1 ? 'text-indigo-600 dark:text-indigo-400' : 'text-violet-600 dark:text-violet-400'
+                                    idx === 0 ? 'text-blue-600' : idx === 1 ? 'text-indigo-600' : 'text-violet-600'
                                   }`}>
                                     {section.title}
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                                <p className="text-xs text-gray-600 leading-relaxed">
                                   {section.content}
                                 </p>
                               </div>
@@ -687,19 +693,19 @@ export function AIChat({
                           </div>
                         )}
                       </div>
-                      {/* Action buttons — subtle, like Gemini */}
+                      {/* Action buttons */}
                       <div className="flex items-center gap-0.5 mt-1.5 ml-1">
                         <button
                           onClick={() => copyToClipboard(msg.content, msg.id)}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                          className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
                           title="Copy"
                         >
                           {copiedId === msg.id ? <Check size={13} className="text-blue-500" /> : <Copy size={13} />}
                         </button>
-                        <button className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" title="Like">
+                        <button className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors" title="Like">
                           <ThumbsUp size={13} />
                         </button>
-                        <button className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" title="Dislike">
+                        <button className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors" title="Dislike">
                           <ThumbsDown size={13} />
                         </button>
                       </div>
@@ -716,8 +722,8 @@ export function AIChat({
               animate={{ opacity: 1 }}
               className="flex items-center gap-3 max-w-[85%]"
             >
-              <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
-                <Bot size={13} className="text-gray-600 dark:text-gray-300" />
+              <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                <Bot size={13} className="text-gray-600" />
               </div>
               <div className="flex items-center gap-2 text-gray-400">
                 <div className="flex gap-1">
@@ -725,7 +731,7 @@ export function AIChat({
                   <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:150ms]" />
                   <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:300ms]" />
                 </div>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-gray-500">
                   {PHASE_LABELS[pipelinePhase] || (uploadedData ? 'Analyzing data...' : 'Thinking...')}
                 </span>
               </div>
@@ -736,7 +742,7 @@ export function AIChat({
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="px-4 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 text-xs rounded-xl text-center"
+              className="px-4 py-2.5 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl text-center"
             >
               {error}
             </motion.div>
@@ -753,7 +759,7 @@ export function AIChat({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm flex items-center justify-center p-6"
+            className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center p-6"
           >
             <div className="w-full max-w-md">
               <FileUpload onFileParsed={handleFileParsed} onCancel={() => setShowUpload(false)} />
@@ -763,24 +769,24 @@ export function AIChat({
       </AnimatePresence>
 
       {/* Input Area */}
-      <div className="px-4 pb-4 pt-2 border-t border-gray-200/80 dark:border-gray-800/50 flex-shrink-0 bg-white dark:bg-gray-950">
+      <div className="px-4 pb-4 pt-2 border-t border-gray-200/80 flex-shrink-0 bg-white">
         <div className="max-w-3xl mx-auto">
-          {/* Business Logic Input — shown when awaiting user input */}
+          {/* Business Logic Input */}
           <AnimatePresence>
             {pipelinePhase === 'awaiting-logic' && (
               <motion.div
                 initial={{ opacity: 0, y: 10, height: 0 }}
                 animate={{ opacity: 1, y: 0, height: 'auto' }}
                 exit={{ opacity: 0, y: -10, height: 0 }}
-                className="mb-3 p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800/40"
+                className="mb-3 p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200"
               >
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
                     <BrainCircuit size={14} className="text-white" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Business Logic Input</h4>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                    <h4 className="text-sm font-semibold text-gray-800">Business Logic Input</h4>
+                    <p className="text-[10px] text-gray-500">
                       Optionally describe any business rules, calculations, or logic to apply
                     </p>
                   </div>
@@ -791,11 +797,11 @@ export function AIChat({
                   onChange={(e) => setBusinessLogic(e.target.value)}
                   placeholder="e.g., Calculate growth rate as (current - previous) / previous * 100. Group by department. Flag any values below threshold as 'At Risk'..."
                   rows={2}
-                  className="w-full bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/30 resize-none min-h-[60px] transition-all"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/30 resize-none min-h-[60px] transition-all"
                   disabled={pipelineLoading}
                 />
                 <div className="flex items-center justify-between mt-2.5">
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                  <p className="text-[10px] text-gray-400">
                     {businessLogic.trim() ? 'Business logic defined ✓' : 'Optional — click proceed to use standard best practices'}
                   </p>
                   <button
@@ -815,19 +821,15 @@ export function AIChat({
             )}
           </AnimatePresence>
 
-          {/* Explicit Actions */}
+          {/* Sticky Action Area — Always visible when data is uploaded */}
           <AnimatePresence>
             {uploadedData && (
-              <motion.div className="mb-2.5 space-y-2">
-                <button
-                  onClick={() => onPreviewDataRequested?.()}
-                  disabled={loading || pipelinePhase === 'idle'}
-                  className="w-full px-4 py-3 text-sm bg-white text-gray-900 rounded-xl hover:bg-gray-50 border border-gray-200 transition-all disabled:opacity-50 font-semibold flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <FileSpreadsheet size={18} />
-                  Preview Data
-                </button>
-
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-2.5 space-y-2"
+              >
+                {/* Show Dashboard button prominently when ready */}
                 {pipelinePhase === 'dashboard-ready' && (
                   <button
                     onClick={handleGenerateDashboard}
@@ -838,6 +840,15 @@ export function AIChat({
                     Preview Dashboard
                     <Sparkles size={14} className="opacity-70" />
                   </button>
+                )}
+
+                {/* Show status when pipeline is running */}
+                {pipelinePhase !== 'idle' && pipelinePhase !== 'dashboard-ready' && pipelinePhase !== 'completed' && (
+                  <div className="w-full px-4 py-2.5 text-xs text-center bg-blue-50 text-blue-700 rounded-xl border border-blue-200">
+                    {pipelinePhase === 'awaiting-logic' 
+                      ? '⏳ Add business logic above or click Apply to proceed'
+                      : `⏳ Pipeline in progress — ${PHASE_LABELS[pipelinePhase] || 'processing...'}`}
+                  </div>
                 )}
 
                 {showDriveConfirm && isDriveConfigured() && pipelinePhase === 'dashboard-ready' && (
@@ -855,13 +866,13 @@ export function AIChat({
           </AnimatePresence>
 
           {/* Chat Input */}
-          <div className="flex items-end gap-2 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700/50 p-2 focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500/30 transition-all shadow-sm">
+          <div className="flex items-end gap-2 bg-gray-50 rounded-2xl border border-gray-200 p-2 focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500/30 transition-all shadow-sm">
             <button
               onClick={() => setShowUpload(!showUpload)}
               className={`p-2 rounded-xl transition-all ${
                 showUpload
                   ? 'bg-blue-500/20 text-blue-500'
-                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
               }`}
               title="Upload file"
             >
@@ -874,7 +885,7 @@ export function AIChat({
               onKeyDown={handleKeyDown}
               placeholder={uploadedData ? "Ask about your data..." : "Type a message..."}
               rows={1}
-              className="flex-1 bg-transparent px-2 py-1.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none resize-none max-h-[120px]"
+              className="flex-1 bg-transparent px-2 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none resize-none max-h-[120px]"
               disabled={loading}
             />
             <button
@@ -885,7 +896,7 @@ export function AIChat({
               <Send size={16} />
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-2.5">
+          <p className="text-[10px] text-gray-400 text-center mt-2.5">
             Arjuna Speaks may display inaccurate info. Verify critical data independently.
           </p>
         </div>

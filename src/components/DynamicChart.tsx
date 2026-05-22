@@ -28,9 +28,10 @@ interface DynamicChartProps {
   config: ChartConfig;
   data: Record<string, string | number>[];
   colorScheme?: ColorScheme;
+  index?: number;
 }
 
-export function DynamicChart({ config, data, colorScheme = 'corporate' }: DynamicChartProps) {
+export function DynamicChart({ config, data, colorScheme = 'corporate', index = 0 }: DynamicChartProps) {
   const colors = useMemo(() => COLORS_BY_SCHEME[colorScheme] || COLORS_BY_SCHEME.corporate, [colorScheme]);
 
   const chartData = useMemo((): Record<string, any>[] => {
@@ -253,19 +254,53 @@ export function DynamicChart({ config, data, colorScheme = 'corporate' }: Dynami
       );
     }
 
-    // ——— SCATTER / BUBBLE ———
+    // ——— SCATTER / BUBBLE (3-param XYZ) ———
     if (type === 'scatter' || type === 'bubble-chart') {
+      const isBubble = type === 'bubble-chart';
+      const maxZ = isBubble && config.dataKeyZ
+        ? Math.max(...chartData.map(d => Number(d.z) || 0), 1)
+        : 1;
       return (
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} name={config.dataKeyX} />
             <YAxis dataKey="value" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} name={String(config.dataKeyY)} />
-            <Tooltip content={<TooltipContent />} />
+            <Tooltip content={
+              isBubble && config.dataKeyZ
+                ? ({ active, payload }: any) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div className="bg-gray-900 text-white px-3 py-2 rounded-lg shadow-xl text-xs border border-gray-700">
+                        <p className="font-medium mb-1">{d.name}</p>
+                        <p style={{ color: colors[0] }}>X ({config.dataKeyX}): {d.name}</p>
+                        <p style={{ color: colors[1] }}>Y ({config.dataKeyY}): {typeof d.value === 'number' ? d.value.toLocaleString() : d.value}</p>
+                        {d.z !== undefined && <p style={{ color: colors[2] }}>Z ({config.dataKeyZ}): {d.z.toLocaleString()}</p>}
+                      </div>
+                    );
+                  }
+                : <TooltipContent />
+            } />
             <Scatter
               data={chartData}
               fill={colors[0]}
-              shape="circle"
+              shape={isBubble ? (props: any) => {
+                const { cx, cy, fill } = props;
+                const zVal = Number(props?.payload?.z) || 0;
+                const size = isBubble && maxZ > 0
+                  ? Math.max(10, (zVal / maxZ) * 60)
+                  : 20;
+                return (
+                  <g>
+                    <circle cx={cx} cy={cy} r={size} fill={colors[0]} fillOpacity={0.6} stroke={colors[0]} strokeWidth={1} />
+                    <circle cx={cx} cy={cy} r={size * 0.7} fill={colors[1]} fillOpacity={0.4} />
+                    <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize={Math.min(size * 0.5, 14)} fontWeight="bold">
+                      {zVal > 0 ? (zVal >= 1000 ? (zVal / 1000).toFixed(1) + 'k' : zVal.toFixed(0)) : ''}
+                    </text>
+                  </g>
+                );
+              } : 'circle'}
             />
           </ScatterChart>
         </ResponsiveContainer>
@@ -700,14 +735,20 @@ export function DynamicChart({ config, data, colorScheme = 'corporate' }: Dynami
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.01, rotateX: 1, rotateY: -1, translateZ: 10 }}
-      transition={{ duration: 0.4, type: 'spring' }}
-      className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-5 transform-gpu"
+      transition={{ delay: index * 0.06, duration: 0.4, type: 'spring', stiffness: 200 }}
+      className="chart-card"
     >
-      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">{config.title}</h3>
-      {config.description && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{config.description}</p>
-      )}
+      <div className="chart-header">
+        <div className="min-w-0 flex-1">
+          <h3 className="chart-title truncate">{config.title}</h3>
+          {config.description && (
+            <p className="chart-subtitle truncate">{config.description}</p>
+          )}
+        </div>
+        <div className="chart-meta">
+          <span className="chart-badge">{config.type.replace(/-/g, ' ')}</span>
+        </div>
+      </div>
       <div className="h-72">{renderChart()}</div>
     </motion.div>
   );

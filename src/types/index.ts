@@ -9,6 +9,7 @@ export type {
   DashboardConfig,
   ChatMessage,
   GroqModel,
+  DataContextInfo,
 } from './dashboard';
 
 export { GROQ_MODELS } from './dashboard';

@@ -15,7 +15,7 @@ export function MetricCard(props: MetricCardProps) {
   const min = Math.min(...sparkline);
   const max = Math.max(...sparkline);
   const range = max - min || 1;
-  
+
   const points = sparkline.map((v, i) => {
     const x = (i / (sparkline.length - 1)) * 100;
     const y = 100 - ((v - min) / range) * 100;
@@ -23,13 +23,13 @@ export function MetricCard(props: MetricCardProps) {
   }).join(' ');
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-800"
+      className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200"
     >
       <div className="flex justify-between items-start mb-4">
-        <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
+        <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
           {icon}
         </div>
         <div className={`flex items-center gap-1 text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
@@ -37,8 +37,8 @@ export function MetricCard(props: MetricCardProps) {
           {Math.abs(change)}%
         </div>
       </div>
-      <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{value}</p>
+      <h3 className="text-gray-500 text-sm font-medium">{title}</h3>
+      <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
       <div className="mt-4 h-12 w-full">
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
           <polyline

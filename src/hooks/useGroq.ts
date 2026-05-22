@@ -4,6 +4,28 @@ import { GroqModel, GROQ_MODELS, UploadedData, DashboardConfig, PipelinePhase } 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
+/**
+ * Determine the best API endpoint to use.
+ * 
+ * On Vercel (production), use the proxy at /api/proxy to bypass corporate firewalls.
+ * In dev mode, proxy is not available so we use direct API with groq API key.
+ * Fall back to direct Groq API if proxy fails or isn't configured.
+ */
+function getApiEndpoint(): { url: string; useProxy: boolean } {
+  const isLocalhost = window.location.hostname === 'localhost';
+  const preferProxy = import.meta.env.VITE_USE_PROXY === 'true';
+  
+  if (preferProxy || !isLocalhost) {
+    return {
+      url: isLocalhost ? '/api/proxy' : `${window.location.origin}/api/proxy`,
+      useProxy: true,
+    };
+  }
+  
+  // Local dev without proxy: use direct Groq API
+  return { url: GROQ_URL, useProxy: false };
+}
+
 function getSystemPrompt(type: 'chat' | 'analyze' | 'dashboard'): string {
   switch (type) {
     case 'dashboard':
@@ -36,13 +58,8 @@ Available color schemes (choose the BEST one for the data context):
 - "chronological" — Blue sequential gradient.
 - "vintage" — Amber/emerald retro palette.
 - "heatmap" — Slate/gray monochrome.
-- "glow" — Sky/violet bright on dark.
+- "glow" — Sky/violet bright palette.
 - "geographic" — Orange gradient from light to deep.
-
-Chart-type-specific color guidance (use these for reference when generating chart configs):
-- Bar/Column charts: Use the colorScheme's primary colors for single-series, multiple colors for multi-series
-- Pie/Donut charts: Use distinct colors for each slice
-- Line/Area charts: Use a single strong color for the line; fill with lighter opacity
 
 CRITICAL — The dashboard MUST suggest the following in the dataSummary:
 1. KEY KPIs — Identify the 3-5 most important metrics. Explain why each matters.
@@ -74,6 +91,7 @@ Return a valid JSON object (NO markdown, NO code blocks, just raw JSON) with thi
       "title": "Chart Title",
       "dataKeyX": "categoryColumn",
       "dataKeyY": "valueColumn or [\"col1\",\"col2\"] for multi-series",
+      "dataKeyZ": "Optional third column for bubble size (bubble-chart/scatter)",
       "groupBy": "optionalGroupColumn",
       "description": "What this chart shows",
       "stacked": false,
@@ -98,6 +116,26 @@ Rules:
 CRITICAL OUTPUT SAFETY:
 - Never output raw data tables, CSV samples, or row lists.
 - Never echo JSON row objects back to the user.
+
+IMPORTANT — USE CONTEXTUAL EMOJIS IN YOUR RESPONSE:
+- 🏥 Healthcare data (doctors, patients, hospitals) → use 🏥 👨‍⚕️ 💊 🩺 🏨
+- 💰 Finance data (revenue, expenses, budgets) → use 💰 📈 💵 🏦 🧾
+- 🛒 Sales/Retail data (products, customers, orders) → use 🛒 📦 🏷️ 🎯 
+- 👥 HR data (employees, hiring, payroll) → use 👥 👤 📋 ⭐
+- 🎓 Education data (students, scores, courses) → use 🎓 📝 👨‍🎓 ⭐
+- 🏭 Manufacturing data → use 🏭 ⚙️ 📦 🔧
+- 💻 Technology/IT data → use 💻 🖥️ 🔧 📡
+- 🏢 Real Estate data → use 🏢 🏠 📋 🔑
+- 🌾 Agriculture data → use 🌾 🌱 🚜 🌿
+- 🚚 Logistics data → use 🚚 📦 🗺️ 🚛
+- ⚡ Energy data → use ⚡ 🔋 💡 🌍
+- 📢 Marketing data → use 📢 📊 🎯 👥
+- 🏨 Hospitality data → use 🏨 🍽️ 🛎️ ✈️
+- ⚖️ Legal data → use ⚖️ 📋 📄 🔍
+- 🏀 Sports data → use 🏀 🏆 ⚽ 🎯
+- 🏛️ Government data → use 🏛️ 📊 👥 📋
+
+Select the most appropriate emojis based on the actual column names and data context.
 
 Your response MUST end with exactly 3 sections titled with markdown headers:
 ## Recommendations
@@ -138,18 +176,44 @@ function getPhaseSystemPrompt(phase: PipelinePhase, data?: UploadedData): string
 
 CRITICAL: Do NOT output raw data tables, row lists, or large CSV samples in your response. Focus on high-level statistics and metadata.
 
+CRITICAL — USE CONTEXTUAL EMOJIS BASED ON THE DATA DOMAIN:
+- Healthcare data (doctors, patients) → 🏥 👨‍⚕️ 💊
+- Finance data (revenue, budgets) → 💰 📈 💵
+- Sales/Retail data (products, orders) → 🛒 📦 🏷️
+- HR data (employees, hiring) → 👥 👤 📋
+- Education data (students, scores) → 🎓 📝 ⭐
+- Technology data (software, IT) → 💻 🖥️ 🔧
+- Manufacturing data → 🏭 ⚙️ 📦
+- Real Estate data → 🏢 🏠 📋
+- Logistics data → 🚚 📦 🗺️
+- Marketing data → 📢 📊 🎯
+
+Analyze the column names and file metadata to determine which domain-specific emojis fit best.
+
 Focus on:
 1. **Data Overview** — Total rows, columns, types of data (numeric vs categorical)
 2. **Transformation Recommendations** — Suggest specific ways to clean or group columns for better insights.
-2. **Key Statistics** — For numeric columns: min, max, avg, sum, missing values. Present in a clean structured format.
-3. **Data Quality** — Any missing data, outliers, or anomalies you spot
-4. **Column Descriptions** — Briefly describe what each column likely represents
-5. **Potential Use Cases** — What business questions could this data answer?
+3. **Key Statistics** — For numeric columns: min, max, avg, sum, missing values. Present in a clean structured format.
+4. **Data Quality** — Any missing data, outliers, or anomalies you spot
+5. **Column Descriptions** — Briefly describe what each column likely represents
+6. **Potential Use Cases** — What business questions could this data answer?
 
 Be concise, specific with numbers, and well-structured. Use bullet points and short paragraphs.`;
 
     case 'recommending':
       return `You are a senior dashboard architect and data visualization expert. Based on the uploaded data, recommend the optimal dashboard design.
+
+IMPORTANT — USE CONTEXTUAL EMOJIS:
+- 🏥 Healthcare → patient metrics, doctor performance, clinical outcomes
+- 💰 Finance → revenue growth, budget allocation, expense tracking
+- 🛒 Sales/Retail → product performance, customer segments, conversion funnels
+- 👥 HR → headcount analysis, attrition rates, training effectiveness
+- 🎓 Education → student performance, course analytics, enrollment trends
+
+EMPHASIZE 3-PARAMETER (XYZ) VISUALIZATIONS WHERE APPROPRIATE:
+When you recommend a bubble-chart or scatter plot, suggest a 3rd parameter (dataKeyZ) for bubble size. This creates 3D-depth visualizations. Examples:
+- Profit (Y) vs Revenue (X) with Customer Count (Z) as bubble size → bubble-chart
+- Sales (Y) vs Month (X) with Units (Z) as bubble size → bubble-chart
 
 Provide recommendations covering:
 
@@ -161,7 +225,7 @@ For different aspects of the data, recommend specific chart types and explain wh
 - Time trends → line/smooth-line/area
 - Comparisons → bar/clustered-bar
 - Distributions → pie/donut/treemap
-- Correlations → scatter/heatmap
+- Correlations → scatter/bubble-chart (use dataKeyZ for 3D bubble size) 
 - Progress → radial-gauge/bullet
 - Composition → stacked-bar/100-stacked-bar
 
@@ -184,14 +248,14 @@ Perform these operations:
 1. **Data Enrichment** — Calculate derived metrics, growth rates, percentages, ratios based on available numeric columns
 2. **Pattern Detection** — Identify trends, seasonality, outliers, and correlations
 3. **Business Logic Application** — Apply any user-specified business rules or logic
-4. **Aggregation Planning** — Determine the best groupings and aggregations for visualization
+4. **3D/XYZ Aggregation Planning** — When recommending bubble-chart, identify which 3 columns map to X, Y, and Z (bubble size) for maximum insight
 5. **Accuracy Optimization** — Validate calculations, cross-check totals, ensure data integrity
 
 Return a structured analysis with:
 - Calculated metrics and their formulas
 - Detected patterns and anomalies
 - Applied business logic transformations
-- Recommended aggregations for charts
+- Recommended XYZ (3-parameter) aggregations for 3D-depth charts
 - Confidence score for predictions (0-100%)`;
 
     default:
@@ -203,31 +267,88 @@ export function useGroq() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Call the Groq API, trying the Vercel proxy first, then falling back to direct.
+   * This ensures the chatbot works on corporate networks where api.groq.com may be blocked.
+   */
+  const callGroqApi = async (body: object): Promise<any> => {
+    const { url, useProxy } = getApiEndpoint();
+    
+    // Try proxy first
+    if (useProxy) {
+      try {
+        const proxyResponse = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(30000), // 30s timeout
+        });
+        
+        if (proxyResponse.ok) {
+          return await proxyResponse.json();
+        }
+        
+        // If proxy returns 400/404, it might not be deployed yet — fall through to direct
+        if (proxyResponse.status === 404 || proxyResponse.status === 405) {
+          console.warn('API proxy not available, falling back to direct Groq API');
+        } else {
+          const errText = await proxyResponse.text();
+          throw new Error(`Proxy error (${proxyResponse.status}): ${errText}`);
+        }
+      } catch (proxyErr) {
+        // Proxy failed (network error, not deployed, etc.) — fall through to direct
+        console.warn('Proxy call failed, falling back to direct API:', proxyErr);
+      }
+    }
+
+    // Fallback: direct Groq API call
+    if (!GROQ_API_KEY) {
+      throw new Error(
+        'GROQ API key not configured. ' +
+        'If you\'re on a corporate network, ensure VITE_USE_PROXY=true and deploy the /api/proxy endpoint to Vercel. ' +
+        'Otherwise, set VITE_GROQ_API_KEY in your .env file.'
+      );
+    }
+
+    const directResponse = await fetch(GROQ_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!directResponse.ok) {
+      const errText = await directResponse.text();
+      throw new Error(`Groq API error (${directResponse.status}): ${errText}`);
+    }
+
+    return await directResponse.json();
+  };
+
   const sendMessage = useCallback(async (
     message: string,
     data?: UploadedData,
     model: GroqModel = 'llama-3.3-70b-versatile',
     type: 'chat' | 'analyze' | 'dashboard' | 'summarizing' | 'recommending' | 'ml-processing' = 'chat',
   ): Promise<string | DashboardConfig | null> => {
-    if (!GROQ_API_KEY) {
-      setError('GROQ API key not configured. Set VITE_GROQ_API_KEY in your environment.');
-      return null;
-    }
-
     setLoading(true);
     setError(null);
 
-    // For pipeline phases, use the phase-specific system prompt
-    const isPipelinePhase = type === 'summarizing' || type === 'recommending' || type === 'ml-processing';
-    const systemPrompt = isPipelinePhase
-      ? getPhaseSystemPrompt(type as PipelinePhase, data)
-      : getSystemPrompt(type === 'analyze' ? 'analyze' : type === 'dashboard' ? 'dashboard' : 'chat');
-    
-    let userContent = message;
+    try {
+      // For pipeline phases, use the phase-specific system prompt
+      const isPipelinePhase = type === 'summarizing' || type === 'recommending' || type === 'ml-processing';
+      const systemPrompt = isPipelinePhase
+        ? getPhaseSystemPrompt(type as PipelinePhase, data)
+        : getSystemPrompt(type === 'analyze' ? 'analyze' : type === 'dashboard' ? 'dashboard' : 'chat');
+      
+      let userContent = message;
 
-    if (data) {
-      // Performance + safety: DO NOT inject raw/sample rows into prompts (prevents row echoes + UI overlap)
-      userContent = `Data file: ${data.fileName}
+      if (data) {
+        // Performance + safety: DO NOT inject raw/sample rows into prompts (prevents row echoes + UI overlap)
+        userContent = `Data file: ${data.fileName}
 Total rows: ${data.totalRows}
 Total columns: ${data.totalCols}
 Columns: ${data.headers.join(', ')}
@@ -236,33 +357,19 @@ Categorical columns: ${data.categoricalColumns.join(', ') || 'none'}
 
 User request:
 ${message}`;
-    }
-
-    try {
-      const response = await fetch(GROQ_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userContent },
-          ],
-          temperature: type === 'dashboard' ? 0.2 : 0.5,
-          max_tokens: type === 'summarizing' ? 1536 : type === 'recommending' || type === 'ml-processing' ? 2048 : 1024,
-        }),
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Groq API error (${response.status}): ${errText}`);
       }
 
-      const result = await response.json();
-      const content = result.choices[0].message.content;
+      const response = await callGroqApi({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userContent },
+        ],
+        temperature: type === 'dashboard' ? 0.2 : 0.5,
+        max_tokens: type === 'summarizing' ? 1536 : type === 'recommending' || type === 'ml-processing' ? 2048 : 1024,
+      });
+
+      const content = response.choices[0].message.content;
 
       if (type === 'dashboard') {
         try {
@@ -280,7 +387,28 @@ ${message}`;
 
       return content;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      const errMsg = err instanceof Error ? err.message : 'Unknown error';
+      
+      // Check for common corporate network errors and give friendly messages
+      let userFriendlyError = errMsg;
+      
+      if (
+        errMsg.includes('Failed to fetch') ||
+        errMsg.includes('NetworkError') ||
+        errMsg.includes('AbortError') ||
+        errMsg.includes('The user aborted a request')
+      ) {
+        userFriendlyError = 
+          '⚠️ Network issue detected. If you\'re on a corporate network this is expected.\n\n' +
+          '**Try these fixes:**\n' +
+          '1. **Use the Vercel proxy** — Deploy to Vercel and set `VITE_USE_PROXY=true`\n' +
+          '2. **Check API key** — Ensure VITE_GROQ_API_KEY is set in .env\n' +
+          '3. **Try a VPN** — If available, connect to a personal VPN\n' +
+          '4. **Talk to IT** — Ask them to whitelist api.groq.com\n\n' +
+          `Technical details: ${errMsg}`;
+      }
+      
+      setError(userFriendlyError);
       return null;
     } finally {
       setLoading(false);

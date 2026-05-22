@@ -1,9 +1,8 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
 /* ============================================
-   ARJUNA SPEAKS — Professional Corporate Theme
+   ARJUNA SPEAKS — Professional Dashboard Theme
+   Inspired by PowerBI, Tableau, and modern analytics
    ============================================ */
 
 /* Custom Scrollbar */
@@ -24,8 +23,8 @@
 
 /* Base Styles */
 * {
-  transition-property: background-color, border-color;
-  transition-duration: 150ms;
+  transition-property: background-color, border-color, transform, box-shadow;
+  transition-duration: 200ms;
   transition-timing-function: ease;
 }
 
@@ -33,6 +32,7 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f1f5f9;
 }
 
 /* Prose styling for chat messages */
@@ -64,14 +64,321 @@ body {
   color: #2563eb;
 }
 
-/* Glass morphism utility */
+/* ============================================
+   3D TRANSFORM UTILITIES
+   ============================================ */
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-1500 {
+  perspective: 1500px;
+}
+
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+/* 3D Card hover lift */
+.card-3d {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.card-3d:hover {
+  transform: translateZ(20px) rotateX(2deg) rotateY(-2deg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.1);
+}
+
+/* 3D Float animation */
+@keyframes float3d {
+  0%, 100% { transform: translateZ(0) translateY(0); }
+  50% { transform: translateZ(10px) translateY(-4px); }
+}
+
+.animate-float-3d {
+  animation: float3d 6s ease-in-out infinite;
+}
+
+@keyframes float3dDelay {
+  0%, 100% { transform: translateZ(0) translateY(0); }
+  50% { transform: translateZ(15px) translateY(-6px); }
+}
+
+.animate-float-3d-delayed {
+  animation: float3dDelay 7s ease-in-out infinite 1s;
+}
+
+/* Glass morphism */
 .glass {
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
-.dark .glass {
-  background: rgba(3, 7, 18, 0.8);
+
+/* ============================================
+   PROFESSIONAL DASHBOARD COMPONENTS
+   PowerBI-inspired patterns & widgets
+   ============================================ */
+
+/* Dashboard Header */
+.dashboard-header {
+  background: white;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 50;
+}
+
+/* PowerBI-style Filter Bar */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 4px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+}
+
+.filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #475569;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.filter-chip:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.filter-chip.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #2563eb;
+  box-shadow: 0 1px 3px rgba(59,130,246,0.15);
+}
+
+/* PowerBI Widget Card (for filter sidebar panels) */
+.widget-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.widget-card .widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.widget-card .widget-content {
+  padding: 12px 16px;
+}
+
+/* Metric Card - Modern Professional (PowerBI inspired) */
+.metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+}
+
+.metric-card:hover {
+  box-shadow: 0 8px 30px -8px rgba(0, 0, 0, 0.1);
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.metric-card .accent-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+}
+
+/* Drill-down indicator */
+.metric-card .drill-hint {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.metric-card:hover .drill-hint {
+  opacity: 1;
+}
+
+/* Professional Chart Card (PowerBI tile style) */
+.chart-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 20px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chart-card:hover {
+  box-shadow: 0 8px 30px -8px rgba(0, 0, 0, 0.1);
+  border-color: #94a3b8;
+}
+
+.chart-card .chart-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.chart-card .chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.chart-card .chart-subtitle {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.chart-card .chart-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.chart-card .chart-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Recharts container fix */
+.recharts-responsive-container {
+  min-height: 0 !important;
+}
+
+/* Professional Share Modal */
+.share-modal-overlay {
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.share-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-width: 440px;
+  width: 100%;
+}
+
+.share-modal .tab-active {
+  background: white;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.share-modal .tab-inactive {
+  color: #64748b;
+}
+
+.share-modal .tab-inactive:hover {
+  color: #334155;
+}
+
+.share-link-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #1e293b;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.share-link-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+}
+
+/* Trend indicators */
+.trend-up {
+  color: #059669;
+}
+
+.trend-down {
+  color: #dc2626;
+}
+
+.trend-neutral {
+  color: #94a3b8;
+}
+
+/* Value Display */
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.metric-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Skeleton loading */
+.skeleton-pulse {
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 /* Card hover - subtle professional lift */
@@ -80,9 +387,6 @@ body {
 }
 .card-hover:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-.dark .card-hover:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Smooth fade-in */
@@ -98,11 +402,6 @@ body {
 /* Input focus styling */
 input:focus, select:focus, textarea:focus {
   outline: none;
-}
-
-/* Dark mode background */
-.dark body {
-  background-color: #030712;
 }
 
 /* Hide scrollbar for chat */
@@ -122,4 +421,56 @@ input:focus, select:focus, textarea:focus {
 
 .message-fade-in {
   animation: messageIn 0.25s ease-out;
+}
+
+/* 3D Depth gradient backgrounds */
+.bg-3d-depth {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(248, 250, 252, 1) 50%,
+    rgba(241, 245, 249, 1) 100%
+  );
+}
+
+/* Sticky action bar */
+.sticky-action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: linear-gradient(to top, rgba(255,255,255,1) 60%, rgba(255,255,255,0));
+  padding-top: 16px;
+  margin-top: -16px;
+}
+
+/* Metric card scale animation */
+@keyframes metricIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.metric-enter {
+  animation: metricIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Chart card slide up */
+@keyframes chartIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chart-enter {
+  animation: chartIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }

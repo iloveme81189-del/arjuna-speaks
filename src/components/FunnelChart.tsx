@@ -24,7 +24,7 @@ export function FunnelChart(props: FunnelChartProps) {
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
         <ReFunnelChart>
-          <Tooltip 
+          <Tooltip
             contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }}
             formatter={(value: number) => [`${value.toLocaleString()} users`, 'Count']}
           />
@@ -35,8 +35,8 @@ export function FunnelChart(props: FunnelChartProps) {
             isAnimationActive
           >
             <LabelList position="inside" fill="#fff" stroke="none" dataKey="name" />
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.fill} />
+            {chartData.map((_, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Funnel>
         </ReFunnelChart>

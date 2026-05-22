@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { UploadedData } from '../types/dashboard';
+import { detectDataContext } from './dataContext';
 
 function analyzeColumns(jsonData: Record<string, string | number>[], headers: string[]) {
   const numericColumns: string[] = [];
@@ -28,6 +29,21 @@ function analyzeColumns(jsonData: Record<string, string | number>[], headers: st
   return { numericColumns, categoricalColumns };
 }
 
+function buildResult(fileName: string, headers: string[], rows: Record<string, string | number>[]): UploadedData {
+  const { numericColumns, categoricalColumns } = analyzeColumns(rows, headers);
+  const context = detectDataContext(fileName, headers);
+  return {
+    fileName,
+    headers,
+    rows,
+    totalRows: rows.length,
+    totalCols: headers.length,
+    numericColumns,
+    categoricalColumns,
+    context,
+  };
+}
+
 export function parseExcelFile(file: File): Promise<UploadedData> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -47,17 +63,7 @@ export function parseExcelFile(file: File): Promise<UploadedData> {
         }
 
         const headers = Object.keys(jsonData[0]);
-        const { numericColumns, categoricalColumns } = analyzeColumns(jsonData, headers);
-
-        resolve({
-          fileName: file.name,
-          headers,
-          rows: jsonData,
-          totalRows: jsonData.length,
-          totalCols: headers.length,
-          numericColumns,
-          categoricalColumns,
-        });
+        resolve(buildResult(file.name, headers, jsonData));
       } catch (err) {
         reject(new Error('Failed to parse file: ' + (err as Error).message));
       }
@@ -79,15 +85,5 @@ export function parseCSVText(text: string, fileName: string): UploadedData {
   }
 
   const headers = Object.keys(jsonData[0]);
-  const { numericColumns, categoricalColumns } = analyzeColumns(jsonData, headers);
-
-  return {
-    fileName,
-    headers,
-    rows: jsonData,
-    totalRows: jsonData.length,
-    totalCols: headers.length,
-    numericColumns,
-    categoricalColumns,
-  };
+  return buildResult(fileName, headers, jsonData);
 }

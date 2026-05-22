@@ -2,13 +2,17 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, TrendingUp, Users, DollarSign, Activity,
-  Target, Clock, Star, Database, Sparkles, Sun, Moon,
+  Target, Clock, Star, Database, Sparkles,
   RefreshCw, BarChart3, PieChart, Globe, Share2, Check,
+  Heart, ShoppingCart, GraduationCap, Monitor, Factory,
+  Building2, Truck, Megaphone, Hotel, Sprout,
+  Trophy, Landmark, Scale, Filter, ChevronDown,
+  Copy, Link, FileText, Download, X, Code, ArrowUpRight,
 } from 'lucide-react';
 import { AIChat } from './AIChat';
 import { DynamicChart } from './DynamicChart';
-import { DataPreview } from './DataPreview';
 import { DashboardConfig, UploadedData } from '../types/dashboard';
+import { getMetricEmoji } from '../utils/dataContext';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   'trending-up': <TrendingUp size={18} />,
@@ -21,81 +25,95 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   'clock': <Clock size={18} />,
   'star': <Star size={18} />,
   'database': <Database size={18} />,
+  'heart-pulse': <Heart size={18} />,
+  'shopping-cart': <ShoppingCart size={18} />,
+  'graduation-cap': <GraduationCap size={18} />,
+  'monitor': <Monitor size={18} />,
+  'factory': <Factory size={18} />,
+  'building-2': <Building2 size={18} />,
+  'truck': <Truck size={18} />,
+  'zap': <Zap size={18} />,
+  'megaphone': <Megaphone size={18} />,
+  'hotel': <Hotel size={18} />,
+  'sprout': <Sprout size={18} />,
+  'trophy': <Trophy size={18} />,
+  'landmark': <Landmark size={18} />,
+  'scale': <Scale size={18} />,
 };
 
 const COLOR_SCHEMES: Record<string, {
   bg: string; text: string; border: string; iconBg: string;
-  gradient: string; chip: string;
+  gradient: string; chip: string; accent: string;
 }> = {
   corporate: {
-    bg: 'bg-blue-50 dark:bg-blue-950/30',
-    text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-800/50',
-    iconBg: 'bg-blue-100 dark:bg-blue-900/40',
+    bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200',
+    iconBg: 'bg-blue-100',
     gradient: 'from-blue-600 to-indigo-600',
-    chip: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/50',
+    chip: 'bg-blue-100 text-blue-700 border-blue-200',
+    accent: '#3b82f6',
   },
   accessible: {
-    bg: 'bg-slate-50 dark:bg-slate-950/30',
-    text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-200 dark:border-slate-800/50',
-    iconBg: 'bg-slate-100 dark:bg-slate-900/40',
+    bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200',
+    iconBg: 'bg-slate-100',
     gradient: 'from-slate-600 to-blue-600',
-    chip: 'bg-slate-100 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/50',
+    chip: 'bg-slate-100 text-slate-700 border-slate-200',
+    accent: '#64748b',
   },
   modern: {
-    bg: 'bg-indigo-50 dark:bg-indigo-950/30',
-    text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-200 dark:border-indigo-800/50',
-    iconBg: 'bg-indigo-100 dark:bg-indigo-900/40',
+    bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200',
+    iconBg: 'bg-indigo-100',
     gradient: 'from-indigo-600 to-blue-600',
-    chip: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700/50',
+    chip: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    accent: '#6366f1',
   },
   semantic: {
-    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-    text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800/50',
-    iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
+    bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200',
+    iconBg: 'bg-emerald-100',
     gradient: 'from-emerald-600 to-teal-600',
-    chip: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50',
+    chip: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    accent: '#059669',
   },
   pastels: {
-    bg: 'bg-rose-50 dark:bg-rose-950/30',
-    text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-800/50',
-    iconBg: 'bg-rose-100 dark:bg-rose-900/40',
+    bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200',
+    iconBg: 'bg-rose-100',
     gradient: 'from-rose-500 to-pink-500',
-    chip: 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/50',
+    chip: 'bg-rose-100 text-rose-700 border-rose-200',
+    accent: '#f43f5e',
   },
   chronological: {
-    bg: 'bg-blue-50 dark:bg-blue-950/30',
-    text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-800/50',
-    iconBg: 'bg-blue-100 dark:bg-blue-900/40',
+    bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200',
+    iconBg: 'bg-blue-100',
     gradient: 'from-blue-600 to-indigo-800',
-    chip: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/50',
+    chip: 'bg-blue-100 text-blue-700 border-blue-200',
+    accent: '#2563eb',
   },
   vintage: {
-    bg: 'bg-amber-50 dark:bg-amber-950/30',
-    text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-800/50',
-    iconBg: 'bg-amber-100 dark:bg-amber-900/40',
+    bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200',
+    iconBg: 'bg-amber-100',
     gradient: 'from-amber-600 to-emerald-700',
-    chip: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50',
+    chip: 'bg-amber-100 text-amber-700 border-amber-200',
+    accent: '#d97706',
   },
   heatmap: {
-    bg: 'bg-slate-50 dark:bg-slate-950/30',
-    text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-200 dark:border-slate-800/50',
-    iconBg: 'bg-slate-100 dark:bg-slate-900/40',
+    bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200',
+    iconBg: 'bg-slate-100',
     gradient: 'from-slate-600 to-slate-800',
-    chip: 'bg-slate-100 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/50',
+    chip: 'bg-slate-100 text-slate-700 border-slate-200',
+    accent: '#475569',
   },
   glow: {
-    bg: 'bg-sky-50 dark:bg-sky-950/30',
-    text: 'text-sky-600 dark:text-sky-400', border: 'border-sky-200 dark:border-sky-800/50',
-    iconBg: 'bg-sky-100 dark:bg-sky-900/40',
+    bg: 'bg-sky-50', text: 'text-sky-600', border: 'border-sky-200',
+    iconBg: 'bg-sky-100',
     gradient: 'from-sky-600 to-indigo-600',
-    chip: 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-700/50',
+    chip: 'bg-sky-100 text-sky-700 border-sky-200',
+    accent: '#0284c7',
   },
   geographic: {
-    bg: 'bg-orange-50 dark:bg-orange-950/30',
-    text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-200 dark:border-orange-800/50',
-    iconBg: 'bg-orange-100 dark:bg-orange-900/40',
+    bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200',
+    iconBg: 'bg-orange-100',
     gradient: 'from-orange-500 to-red-600',
-    chip: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700/50',
+    chip: 'bg-orange-100 text-orange-700 border-orange-200',
+    accent: '#f97316',
   },
 };
 
@@ -140,30 +158,23 @@ function formatValue(value: number, suffix?: string): string {
   if (suffix === '$') return '$' + formatted;
   return formatted + (suffix || '');
 }
-  
 
 const DASHBOARD_STORAGE_KEY = 'arjuna_dashboard';
 
 export function Dashboard() {
-  // Explicitly default to Light Mode (false) as requested
-  const [darkMode, setDarkMode] = useState(false); 
   const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig | null>(null);
   const [uploadedData, setUploadedData] = useState<UploadedData | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [shareLinkType, setShareLinkType] = useState<'public' | 'embed'>('public');
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
-  // DataPreview is NOT shown automatically; it appears only after explicit user request.
-  const [showDataPreview, setShowDataPreview] = useState(false);
-
-  // Hard-sync the theme class to the document root to override system defaults on load
+  // Force white theme on initial load
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
+    document.documentElement.classList.remove('dark');
+  }, []);
 
   const colors = dashboardConfig
     ? COLOR_SCHEMES[dashboardConfig.colorScheme] || COLOR_SCHEMES.corporate
@@ -215,165 +226,233 @@ export function Dashboard() {
     });
   }, [dashboardConfig, uploadedData]);
 
+  const getShareLink = () => {
+    if (shareLinkType === 'embed') {
+      return `<iframe src="${shareUrl}" width="100%" height="800" frameborder="0" style="border:1px solid #e2e8f0;border-radius:12px;"></iframe>`;
+    }
+    return shareUrl || '';
+  };
+
+  const copyShareLink = async () => {
+    const link = getShareLink();
+    try {
+      await navigator.clipboard.writeText(link);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      const input = document.querySelector<HTMLInputElement>('[data-share-input]');
+      if (input) {
+        input.select();
+        document.execCommand('copy');
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      }
+    }
+  };
+
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark bg-gray-950' : 'bg-gray-50'}`}>
-      {/* Glass Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50">
-        <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-3">
+    <div className="min-h-screen bg-slate-100">
+      {/* Professional Dashboard Header */}
+      <header className="dashboard-header fixed top-0 left-0 right-0 z-50">
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
-              <Zap size={20} className="text-white" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
+              <Zap size={18} className="text-white" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+            <div className="flex items-center gap-1">
+              <h1 className="text-base font-bold text-gray-900 tracking-tight">
                 Arjuna Speaks
               </h1>
+              {dashboardConfig && (
+                <>
+                  <ChevronDown size={14} className="text-gray-400 mx-1" />
+                  <span className="text-sm text-gray-500 font-medium">{dashboardConfig.title}</span>
+                </>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {dashboardConfig && (
-              <>
-                <button
-                  onClick={() => setShowShareModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 transition-all font-medium"
-                >
-                  <Share2 size={14} />
-                  Share
-                </button>
-                <button
-                  onClick={() => setDashboardConfig(null)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
-                >
-                  <RefreshCw size={14} />
-                  New
-                </button>
-              </>
-            )}
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
-            >
-              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {dashboardConfig && (
+            <>
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-all font-medium"
+              >
+                <Share2 size={14} />
+                Share
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all"
+              >
+                <Download size={14} />
+                Export
+              </button>
+              <div className="w-px h-5 bg-gray-200 mx-1" />
+              <button
+                onClick={() => { setDashboardConfig(null); setUploadedData(null); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 transition-all"
+              >
+                <RefreshCw size={14} />
+                New
+              </button>
+            </>
+          )}
         </div>
       </header>
 
       {/* Spacer for fixed header */}
       <div className="h-16" />
 
-      <main className="max-w-[1600px] mx-auto p-6 transition-all duration-700" style={{ perspective: '1500px' }}>
-        <div className="flex flex-col lg:flex-row gap-6">
+      <main className="max-w-[1600px] mx-auto p-5">
+        <div className="flex flex-col lg:flex-row gap-5">
           {/* Chat Sidebar — Left */}
-          <aside className="w-full lg:w-[400px] flex-shrink-0" style={{ transform: 'translateZ(30px)' }}>
-            <div className="sticky top-24 h-[calc(100vh-120px)] min-h-[600px]">
+          <aside className="w-full lg:w-[380px] flex-shrink-0">
+            <div className="sticky top-20 h-[calc(100vh-90px)] min-h-[600px]">
               <AIChat
                 onDashboardGenerated={handleDashboardGenerated}
-                onPreviewDataRequested={() => setShowDataPreview(true)}
               />
             </div>
           </aside>
 
           {/* Dashboard Area — Right */}
-          <section className="flex-1 space-y-6 min-w-0" style={{ transformStyle: 'preserve-3d' }}>
+          <section className="flex-1 min-w-0 space-y-5">
             {dashboardConfig && uploadedData ? (
               <>
-                {/* Dashboard Header */}
-                <motion.div
-                  initial={{ opacity: 0, y: -12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-3"
-                >
+                {/* Dashboard Header with Meta */}
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-1 rounded-full border text-[10px] font-medium uppercase tracking-wider ${colors.chip}`}>
+                    <span className={`px-2.5 py-1 rounded-md border text-[10px] font-medium uppercase tracking-wider ${colors.chip}`}>
                       <Sparkles size={10} className="inline mr-1" />
-                      AI Generated
+                      AI Generated Dashboard
                     </span>
-                    <span className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 text-[10px]">
-                      {uploadedData.totalRows} rows
+                    <span className="px-2.5 py-1 rounded-md bg-white border border-gray-200 text-gray-500 text-[10px] font-medium">
+                      {uploadedData.totalRows} rows · {uploadedData.totalCols} columns
                     </span>
+                    {uploadedData.context && (
+                      <span
+                        className="px-2 py-1 rounded-md text-[10px] font-medium text-white flex items-center gap-1"
+                        style={{ backgroundColor: uploadedData.context.accentColor }}
+                      >
+                        {uploadedData.context.emoji} {uploadedData.context.label}
+                      </span>
+                    )}
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    {dashboardConfig.title}
-                  </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {dashboardConfig.description}
-                  </p>
-                </motion.div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+                      {dashboardConfig.title}
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {dashboardConfig.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Filter Bar (like PowerBI) */}
+                {dashboardConfig.filters && dashboardConfig.filters.length > 0 && (
+                  <div className="bg-white rounded-xl border border-gray-200/80 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Filter size={14} className="text-gray-400 flex-shrink-0" />
+                      <div className="filter-bar flex-1">
+                        {dashboardConfig.filters.map((filter, i) => (
+                          <button
+                            key={filter}
+                            onClick={() => setActiveFilter(activeFilter === filter ? null : filter)}
+                            className={`filter-chip ${activeFilter === filter ? 'active' : ''}`}
+                            style={{ animationDelay: `${i * 30}ms` }}
+                          >
+                            {filter}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Data Summary Card */}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`p-5 rounded-2xl border backdrop-blur-sm ${colors.bg} ${colors.border}`}
-                >
+                <div className={`rounded-xl border backdrop-blur-sm bg-white ${colors.border} p-4`}>
                   <div className="flex items-center gap-2 mb-2">
                     <Database size={14} className={colors.text} />
                     <span className={`text-xs font-medium ${colors.text}`}>Data Overview</span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    📊 <strong className="text-gray-900 dark:text-white">{uploadedData.fileName}</strong> — {uploadedData.totalRows} rows × {uploadedData.totalCols} columns
+                  <p className="text-sm text-gray-600">
+                    <strong className="text-gray-900">{uploadedData.fileName}</strong> — {uploadedData.totalRows} rows × {uploadedData.totalCols} columns
                   </p>
                   {dashboardConfig.dataSummary && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-gray-500 mt-2 leading-relaxed">
                       {dashboardConfig.dataSummary}
                     </p>
                   )}
-                  <div className="flex gap-3 mt-3">
-                    <span className="text-xs text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full">
+                  <div className="flex gap-2 mt-3">
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-medium">
                       {uploadedData.numericColumns.length} numeric
                     </span>
-                    <span className="text-xs text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-md font-medium">
                       {uploadedData.categoricalColumns.length} categories
                     </span>
                   </div>
-                </motion.div>
+                </div>
 
-                {/* Metric Cards Grid */}
+                {/* KPI Metric Cards Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {metricCards.map((metric, i) => (
-                    <motion.div
-                      key={metric.title}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      whileHover={{ translateZ: 50, rotateX: 2, rotateY: -2, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}
-                      transition={{ delay: i * 0.04, type: 'spring', stiffness: 200 }}
-                      style={{ transformStyle: 'preserve-3d' }}
-                      className="group bg-white dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl p-5 shadow-lg border border-gray-200/50 dark:border-gray-800/50 hover:border-blue-500/20 dark:hover:border-blue-500/20 transition-all duration-300"
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div className={`p-2 rounded-xl ${colors.iconBg} group-hover:scale-110 transition-transform duration-300`}>
-                          <span className={colors.text}>
-                            {ICON_MAP[metric.icon] || <Database size={18} />}
-                          </span>
+                  {metricCards.map((metric, i) => {
+                    const isPositive = metric.change !== undefined && metric.change >= 0;
+                    const isNegative = metric.change !== undefined && metric.change < 0;
+                    return (
+                      <motion.div
+                        key={metric.title}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.04, type: 'spring', stiffness: 200 }}
+                        className="metric-card"
+                      >
+                        {/* Accent bar */}
+                        <div
+                          className="accent-bar"
+                          style={{ background: `linear-gradient(90deg, ${colors.accent}, ${colors.accent}88)` }}
+                        />
+
+                        <div className="flex items-start justify-between mb-2">
+                          <div className={`p-2 rounded-lg ${colors.iconBg}`}>
+                            {ICON_MAP[metric.icon] || <Database size={16} />}
+                          </div>
+                          {metric.change !== undefined && (
+                            <span className={`flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${
+                              isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                            }`}>
+                              {isPositive ? (
+                                <TrendingUp size={11} />
+                              ) : (
+                                <TrendingUp size={11} className="rotate-180" />
+                              )}
+                              {Math.abs(metric.change)}%
+                            </span>
+                          )}
                         </div>
-                        {metric.change !== undefined && (
-                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                            metric.change >= 0
-                              ? 'text-emerald-400 bg-emerald-500/10'
-                              : 'text-red-400 bg-red-500/10'
-                          }`}>
-                            {metric.change >= 0 ? '↑' : '↓'} {Math.abs(metric.change)}%
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="text-gray-500 dark:text-gray-500 text-[10px] font-medium uppercase tracking-widest">
-                        {metric.title}
-                      </h3>
-                      <p className={`text-2xl font-bold text-gray-900 dark:text-white mt-1 group-hover:${colors.text} transition-colors`}>
-                        {typeof metric.computedValue === 'number'
-                          ? formatValue(metric.computedValue, metric.suffix)
-                          : metric.computedValue}
-                      </p>
-                    </motion.div>
-                  ))}
+
+                        <div className="metric-value">
+                          {typeof metric.computedValue === 'number'
+                            ? formatValue(metric.computedValue, metric.suffix)
+                            : metric.computedValue}
+                        </div>
+                        <div className="metric-label flex items-center gap-1">
+                          <span>{getMetricEmoji(metric.title, uploadedData?.context?.domain || 'general')}</span>
+                          <span>{metric.title}</span>
+                        </div>
+                        <div className="drill-hint absolute bottom-2 right-3 text-[9px] text-gray-300 font-medium flex items-center gap-0.5">
+                          Details <ArrowUpRight size={9} />
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
 
                 {/* Charts Grid */}
                 <div className={
                   dashboardConfig.layout === 'full'
-                    ? 'space-y-6'
-                    : 'grid grid-cols-1 lg:grid-cols-2 gap-6'
+                    ? 'space-y-5'
+                    : 'grid grid-cols-1 lg:grid-cols-2 gap-5'
                 }>
                   {dashboardConfig.charts.map((chartConfig, i) => (
                     <DynamicChart
@@ -381,143 +460,180 @@ export function Dashboard() {
                       config={chartConfig}
                       data={uploadedData.rows}
                       colorScheme={dashboardConfig.colorScheme}
+                      index={i}
                     />
                   ))}
                 </div>
               </>
             ) : uploadedData ? (
-              /* Data Preview Workspace — NOT auto-rendered (avoids chat overlap issues) */
-              <>
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Data Workspace</h2>
-                    <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-medium border border-blue-200 dark:border-blue-800/50">
-                      Awaiting Dashboard Generation
-                    </span>
-                  </div>
+              /* Data Workspace (analysis-only) */
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-xl font-bold text-gray-900 tracking-tight">Data Workspace</h2>
+                  <span className="px-3 py-1 rounded-md bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200">
+                    Awaiting Dashboard Generation
+                  </span>
+                </div>
 
-                  {showDataPreview ? (
-                    <DataPreview data={uploadedData} />
-                  ) : (
-                    <div className="p-4 rounded-2xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800/50 text-sm text-gray-700 dark:text-gray-200">
-                      Data preview is hidden by default for better visibility on large uploads.
-                      Use the <span className="font-semibold">Preview Data</span> button in the left chat panel to view a small table sample.
+                <div className="rounded-xl bg-white border border-gray-200 p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <Database size={20} className="text-blue-600" />
                     </div>
-                  )}
-                </motion.div>
-              </>
+                    <div>
+                      <p className="font-semibold text-gray-900">{uploadedData.fileName}</p>
+                      <p className="text-xs text-gray-500">{uploadedData.totalRows} rows · {uploadedData.totalCols} columns</p>
+                      {uploadedData.context && (
+                        <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-medium text-white" style={{ backgroundColor: uploadedData.context.accentColor }}>
+                          {uploadedData.context.emoji} {uploadedData.context.label}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-gray-500 text-xs leading-relaxed">
+                    Data has been analyzed. Insights, KPIs, and recommendations are available in the chat panel on the left.
+                    When ready, click <strong>Preview Dashboard</strong> in the chat to generate your visualization.
+                  </p>
+                </div>
+              </div>
             ) : (
               /* Welcome / Empty State */
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center h-[600px] bg-white dark:bg-gray-900/80 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-12"
-              >
-                <div className="mb-8">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md">
-                    <Zap size={40} className="text-white" />
-                  </div>
+              <div className="flex flex-col items-center justify-center h-[600px] bg-white rounded-xl border border-gray-200 p-12 shadow-sm">
+                <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg mb-6
+                  animate-float-3d">
+                  <Zap size={40} className="text-white" />
                 </div>
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2 tracking-tight">
-                  Experience the edge in automated dashboard synthesis
+                <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
+                  Welcome to Arjuna Speaks
                 </h2>
-                <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-8 leading-relaxed">
-                  Welcome to **Arjuna Speaks**! Upload an Excel or CSV file to initiate a deep-learning analysis of patterns and KPIs. Our specialized engine architects professional visual intelligence tailored to your specific business logic, including 3D data visualizations.
+                <p className="text-gray-500 text-center max-w-md mb-8 leading-relaxed">
+                  Upload an Excel or CSV file to initiate pattern analysis and KPI detection.
+                  Your professional dashboard will be generated with intelligent visualizations.
                 </p>
                 <div className="flex flex-wrap justify-center items-center gap-2">
-                  {['1. Upload Data', '2. AI Summary', '3. Recommendations', '4. Business Logic & ML', '5. Generate'].map((step, i) => (
+                  {['1. Upload Data', '2. AI Analysis', '3. Recommendations', '4. Generate'].map((step, i) => (
                     <div key={step} className="flex items-center gap-2 mb-2">
                       <div className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${
-                        i === 4
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                        i === 3
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'bg-white text-gray-600 border border-gray-200 shadow-sm'
                       }`}>
                         {step}
                       </div>
-                      {i < 4 && <span className="text-gray-400 text-xs">→</span>}
+                      {i < 3 && <span className="text-gray-300 text-xs">→</span>}
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </div>
             )}
           </section>
-
-
         </div>
       </main>
 
-      {/* Share Modal */}
+      {/* Professional Share Modal */}
       <AnimatePresence>
         {showShareModal && shareUrl && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 share-modal-overlay"
             onClick={() => setShowShareModal(false)}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-gray-900 border border-gray-800 rounded-2xl p-6 max-w-md w-full shadow-xl"
+              className="share-modal"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+              {/* Modal Header */}
+              <div className="flex items-center gap-3 p-5 pb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm">
                   <Share2 size={20} className="text-white" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Share Dashboard</h3>
-                  <p className="text-xs text-gray-400">Anyone with this link can view</p>
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-gray-900">Share Dashboard</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {dashboardConfig?.title || 'Analytics Dashboard'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Link Type Tabs */}
+              <div className="px-5 py-3">
+                <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setShareLinkType('public')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md transition-all ${
+                      shareLinkType === 'public' ? 'tab-active' : 'tab-inactive'
+                    }`}
+                  >
+                    <Link size={14} />
+                    Share Link
+                  </button>
+                  <button
+                    onClick={() => setShareLinkType('embed')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md transition-all ${
+                      shareLinkType === 'embed' ? 'tab-active' : 'tab-inactive'
+                    }`}
+                  >
+                    <Code size={14} />
+                    Embed
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2 bg-gray-800 rounded-xl p-3 mb-4">
-                <Globe size={16} className="text-gray-400 flex-shrink-0" />
-                <input
-                  type="text"
-                  readOnly
-                  value={shareUrl}
-                  data-share-input
-                  className="flex-1 bg-transparent text-sm text-gray-300 focus:outline-none"
-                  onClick={(e) => {
-                    (e.target as HTMLInputElement).select();
-                    try {
-                      navigator.clipboard.writeText(shareUrl || '');
-                      setShareCopied(true);
-                      setTimeout(() => setShareCopied(false), 2000);
-                    } catch { /* fallback handled by button */ }
-                  }}
-                />
-                <button
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(shareUrl || '');
-                      setShareCopied(true);
-                      setTimeout(() => setShareCopied(false), 2000);
-                    } catch {
-                      // Fallback for insecure contexts
-                      const input = document.querySelector<HTMLInputElement>('[data-share-input]');
-                      if (input) {
-                        input.select();
-                        document.execCommand('copy');
-                        setShareCopied(true);
-                        setTimeout(() => setShareCopied(false), 2000);
-                      }
-                    }
-                  }}
-                  className={`px-3 py-1.5 text-xs rounded-lg transition-all font-medium flex items-center gap-1 ${
-                    shareCopied
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {shareCopied ? <><Check size={12} /> Copied</> : 'Copy'}
-                </button>
+
+              {/* Link Display */}
+              <div className="px-5 pb-5">
+                <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-1.5 border border-gray-200">
+                  <div className="flex-1 px-2">
+                    {shareLinkType === 'embed' ? (
+                      <textarea
+                        readOnly
+                        value={getShareLink()}
+                        rows={2}
+                        className="w-full bg-transparent text-[11px] text-gray-600 font-mono resize-none focus:outline-none"
+                        onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        readOnly
+                        value={getShareLink()}
+                        data-share-input
+                        className="w-full bg-transparent text-sm text-gray-700 focus:outline-none"
+                        onClick={(e) => (e.target as HTMLInputElement).select()}
+                      />
+                    )}
+                  </div>
+                  <button
+                    onClick={copyShareLink}
+                    className={`px-3 py-2 text-xs rounded-lg transition-all font-medium flex items-center gap-1.5 flex-shrink-0 ${
+                      shareCopied
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {shareCopied ? (
+                      <><Check size={13} /> Copied</>
+                    ) : (
+                      <><Copy size={13} /> Copy</>
+                    )}
+                  </button>
+                </div>
+                <p className="text-[11px] text-gray-400 mt-2 text-center">
+                  {shareLinkType === 'embed'
+                    ? 'Paste this iframe code into any HTML page to embed the dashboard.'
+                    : 'Anyone with this link can view the dashboard.'}
+                </p>
               </div>
             </motion.div>
           </motion.div>

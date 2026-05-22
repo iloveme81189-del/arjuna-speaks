@@ -11,17 +11,16 @@ interface HeatmapProps {
 export function Heatmap(props: HeatmapProps) {
   const { data } = props;
   return (
-    <div className="relative w-full h-64 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
+    <div className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden">
       <div className="absolute inset-0 flex flex-col items-center justify-center opacity-20 pointer-events-none">
-        <div className="w-3/4 h-8 bg-gray-400 rounded mb-4" />
-        <div className="w-1/2 h-4 bg-gray-400 rounded mb-2" />
+        <div className="w-3/4 h-8 bg-gray-300 rounded mb-4" />
+        <div className="w-1/2 h-4 bg-gray-300 rounded mb-2" />
         <div className="grid grid-cols-3 gap-2 w-3/4">
-          <div className="h-20 bg-gray-400 rounded" />
-          <div className="h-20 bg-gray-400 rounded" />
-          <div className="h-20 bg-gray-400 rounded" />
+          <div className="h-20 bg-gray-300 rounded" />
+          <div className="h-20 bg-gray-300 rounded" />
+          <div className="h-20 bg-gray-300 rounded" />
         </div>
       </div>
-      
       {data.map((point, i) => (
         <div
           key={i}
