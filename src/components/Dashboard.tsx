@@ -260,16 +260,16 @@ export function Dashboard() {
       <div className="h-16" />
 
       <main className="max-w-[1600px] mx-auto p-6 transition-all duration-700" style={{ perspective: '1500px' }}>
-        <div className="grid gap-6 grid-cols-1 md:grid-cols-[380px_1fr]">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Chat Sidebar — Left */}
-          <div className="block" style={{ transform: 'translateZ(30px)' }}>
-            <div className="sticky top-24 h-[calc(100vh-120px)]">
+          <aside className="w-full lg:w-[400px] flex-shrink-0" style={{ transform: 'translateZ(30px)' }}>
+            <div className="sticky top-24 h-[calc(100vh-120px)] min-h-[600px]">
               <AIChat onDashboardGenerated={handleDashboardGenerated} />
             </div>
-          </div>
+          </aside>
 
           {/* Dashboard Area — Right */}
-          <div className="space-y-6 min-w-0" style={{ transformStyle: 'preserve-3d' }}>
+          <section className="flex-1 space-y-6 min-w-0" style={{ transformStyle: 'preserve-3d' }}>
             {dashboardConfig && uploadedData ? (
               <>
                 {/* Dashboard Header */}
@@ -397,7 +397,7 @@ export function Dashboard() {
                 </motion.div>
               </>
             ) : (
-              /* Empty State */
+              /* Welcome / Empty State */
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -430,7 +430,7 @@ export function Dashboard() {
                 </div>
               </motion.div>
             )}
-          </div>
+          </section>
 
 
         </div>

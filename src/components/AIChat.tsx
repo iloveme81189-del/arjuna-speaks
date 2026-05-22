@@ -143,7 +143,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
     setPipelineLoading(true);
 
     const summaryResponse = await sendMessage(
-      'Analyze this data deeply. Provide insights, identify data types, and suggest specific transformations for columns (e.g., date formatting, normalization, or grouping) that would improve visualization.',
+      'Provide a high-level executive summary of this data. DO NOT include raw data tables or lists of rows. Focus on: 1. Statistical highlights 2. Data quality 3. Recommended column transformations for visualization.',
       data,
       selectedModel,
       'summarizing'
@@ -257,7 +257,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
       const shareMsg: ChatMessage = {
         id: generateId(),
         role: 'assistant',
-        content: `### 🎉 Report Finished & Stored\nYour professional dashboard is now live and stored in your Google Drive 'Reports' folder.\n\n**Shareable Links:**\n1. 📂 Google Drive Folder\n2. 🔗 Public Dashboard Link`,
+        content: `### 🎉 Report Finished & Stored\nYour professional dashboard is now live and stored in your Google Drive 'Reports' folder.\n\n**Shareable Links:**\n1. 📂 Google Drive Link\n2. 🔗 Public Dashboard Link`,
         timestamp: new Date(),
       };
       addMessage(activeSessionId, shareMsg);
@@ -297,37 +297,9 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
     };
     addMessage(activeSessionId, userMsg);
 
-    const isDashboardRequest = text.toLowerCase().includes('generate') ||
-      text.toLowerCase().includes('dashboard') ||
-      text.toLowerCase().includes('visualize') ||
-      text.toLowerCase().includes('chart');
-
-    if (isDashboardRequest && uploadedData) {
-      const response = await sendMessage(text, uploadedData, selectedModel, 'dashboard');
-      if (response && typeof response === 'object' && 'title' in response) {
-        const config = response as DashboardConfig;
-        const aiMsg: ChatMessage = {
-          id: generateId(),
-          role: 'assistant',
-          content: `## ${config.title}\n${config.description || ''}\n\n${config.dataSummary || ''}`,
-          timestamp: new Date(),
-          metadata: { type: 'dashboard', dashboardConfig: config },
-        };
-        addMessage(activeSessionId, aiMsg);
-        onDashboardGenerated?.(config, uploadedData);
-        return;
-      } else if (response && typeof response === 'string') {
-        const aiMsg: ChatMessage = {
-          id: generateId(),
-          role: 'assistant',
-          content: response,
-          timestamp: new Date(),
-        };
-        addMessage(activeSessionId, aiMsg);
-        return;
-      }
-    }
-
+    // Light-theme + UX rule:
+    // Never auto-generate dashboards from chat text.
+    // Dashboard generation must happen ONLY via the explicit "Preview Dashboard" button.
     const response = await sendMessage(text, uploadedData || undefined, selectedModel, 'chat');
     if (response && typeof response === 'string') {
       const aiMsg: ChatMessage = {
@@ -407,7 +379,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
   const showPipelineProgress = pipelinePhase !== 'idle' && uploadedData !== null;
 
   return (
-    <div className={`flex flex-col ${standalone ? 'h-screen' : 'h-full'} bg-white dark:bg-gray-950 rounded-2xl shadow-lg border border-gray-200/80 dark:border-gray-800/50 overflow-hidden relative`}>
+    <div className={`flex flex-col ${standalone ? 'h-screen' : 'h-full'} bg-white rounded-2xl shadow-lg border border-gray-200/80 overflow-hidden relative`}>
       {/* Sidebar Overlay */}
       <AnimatePresence>
         {showSidebar && (
@@ -677,8 +649,8 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
                       <Bot size={13} className="text-gray-600 dark:text-gray-300" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 text-sm leading-relaxed border border-gray-100 dark:border-gray-700/30">
-                        <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
+                      <div className="px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 text-sm leading-relaxed border border-gray-100 dark:border-gray-700/30 overflow-hidden">
+                        <div className="prose prose-sm dark:prose-invert max-w-full whitespace-pre-wrap overflow-x-auto">
                           {msg.content}
                         </div>
                         {msg.metadata?.type === 'dashboard' && msg.metadata.dashboardConfig && (
@@ -851,7 +823,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
                   Preview Dashboard
                   <Sparkles size={14} className="opacity-70" />
                 </button>
-                {showDriveConfirm && (
+                {showDriveConfirm && isDriveConfigured() && (
                   <button
                     onClick={handleConfirmAndStore}
                     disabled={driveStatus === 'uploading'}
