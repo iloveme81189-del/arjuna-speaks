@@ -27,8 +27,8 @@ const PIPELINE_STEPS: { phase: PipelinePhase; label: string; icon: React.ReactNo
   { phase: 'recommending', label: 'Recommendations', icon: <Lightbulb size={14} /> },
   { phase: 'awaiting-logic', label: 'Business Logic', icon: <BrainCircuit size={14} /> },
   { phase: 'ml-processing', label: 'ML Processing', icon: <Loader2 size={14} /> },
-  { phase: 'dashboard-ready', label: 'Preview Ready', icon: <LayoutDashboard size={14} /> },
-  { phase: 'completed', label: 'Stored & Shared', icon: <Check size={14} /> },
+  { phase: 'dashboard-ready', label: 'Ready', icon: <LayoutDashboard size={14} /> },
+  { phase: 'completed', label: 'Saved', icon: <Check size={14} /> },
 ];
 
 const PHASE_LABELS: Record<string, string> = {
@@ -407,7 +407,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
   const showPipelineProgress = pipelinePhase !== 'idle' && uploadedData !== null;
 
   return (
-    <div className={`flex flex-col ${standalone ? 'h-screen' : 'h-[600px]'} bg-white dark:bg-gray-950 rounded-2xl shadow-lg border border-gray-200/80 dark:border-gray-800/50 overflow-hidden relative`}>
+    <div className={`flex flex-col ${standalone ? 'h-screen' : 'h-full'} bg-white dark:bg-gray-950 rounded-2xl shadow-lg border border-gray-200/80 dark:border-gray-800/50 overflow-hidden relative`}>
       {/* Sidebar Overlay */}
       <AnimatePresence>
         {showSidebar && (
@@ -623,6 +623,29 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
       {/* Messages — Centered like Gemini */}
       <div className="flex-1 overflow-y-auto px-4 py-8 scroll-smooth">
         <div className="max-w-2xl mx-auto space-y-6">
+          {messages.length === 0 && !loading && !uploadedData && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-12 text-center"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg mb-6">
+                <Bot size={32} className="text-white" />
+              </div>
+              <div className="space-y-4 px-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">👋 Welcome to Arjuna Speaks!</h2>
+                <div className="text-sm text-gray-500 dark:text-gray-400 space-y-4 max-w-sm mx-auto">
+                  <p className="font-medium text-gray-700 dark:text-gray-300">Get started:</p>
+                  <ul className="text-left space-y-3 ml-4">
+                    <li className="flex items-start gap-2"><span>•</span> Upload an Excel or CSV file (drag & drop or click)</li>
+                    <li className="flex items-start gap-2"><span>•</span> Ask questions about your data</li>
+                    <li className="flex items-start gap-2"><span>•</span> Say "generate dashboard" for visualizations</li>
+                    <li className="flex items-start gap-2"><span>•</span> The AI will suggest KPIs, insights, and chart types</li>
+                  </ul>
+                </div>
+              </div>
+            </motion.div>
+          )}
           <AnimatePresence initial={false}>
             {messages.map((msg) => (
               <motion.div
@@ -749,9 +772,16 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
       {/* File Upload Overlay */}
       <AnimatePresence>
         {showUpload && (
-          <div className="px-4 pb-2 w-full">
-            <FileUpload onFileParsed={handleFileParsed} onCancel={() => setShowUpload(false)} />
-          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm flex items-center justify-center p-6"
+          >
+            <div className="w-full max-w-md">
+              <FileUpload onFileParsed={handleFileParsed} onCancel={() => setShowUpload(false)} />
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 

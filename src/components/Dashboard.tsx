@@ -145,12 +145,22 @@ function formatValue(value: number, suffix?: string): string {
 const DASHBOARD_STORAGE_KEY = 'arjuna_dashboard';
 
 export function Dashboard() {
-  const [darkMode, setDarkMode] = useState(false); // Default to white theme
+  // Explicitly default to Light Mode (false) as requested
+  const [darkMode, setDarkMode] = useState(false); 
   const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig | null>(null);
   const [uploadedData, setUploadedData] = useState<UploadedData | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+
+  // Hard-sync the theme class to the document root to override system defaults on load
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
 
   const colors = dashboardConfig
     ? COLOR_SCHEMES[dashboardConfig.colorScheme] || COLOR_SCHEMES.corporate
@@ -250,10 +260,10 @@ export function Dashboard() {
       <div className="h-16" />
 
       <main className="max-w-[1600px] mx-auto p-6 transition-all duration-700" style={{ perspective: '1500px' }}>
-        <div className="grid gap-6 grid-cols-1 xl:grid-cols-[420px_1fr]">
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-[380px_1fr]">
           {/* Chat Sidebar — Left */}
           <div className="block" style={{ transform: 'translateZ(30px)' }}>
-            <div className="sticky top-24">
+            <div className="sticky top-24 h-[calc(100vh-120px)]">
               <AIChat onDashboardGenerated={handleDashboardGenerated} />
             </div>
           </div>
