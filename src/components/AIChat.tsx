@@ -19,6 +19,7 @@ import { useChatStore } from '../store/chatStore';
 
 interface AIChatProps {
   onDashboardGenerated?: (config: DashboardConfig, data: UploadedData) => void;
+  onPreviewDataRequested?: () => void;
   standalone?: boolean;
 }
 
@@ -37,7 +38,11 @@ const PHASE_LABELS: Record<string, string> = {
   'ml-processing': 'Applying ML processing...',
 };
 
-export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps) {
+export function AIChat({
+  onDashboardGenerated,
+  onPreviewDataRequested,
+  standalone = false,
+}: AIChatProps) {
   const {
     sessions, activeSessionId,
     createSession, switchSession, closeSession,
@@ -810,20 +815,32 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
             )}
           </AnimatePresence>
 
-          {/* Generate Dashboard Button — only when pipeline is complete */}
+          {/* Explicit Actions */}
           <AnimatePresence>
-            {pipelinePhase === 'dashboard-ready' && uploadedData && (
+            {uploadedData && (
               <motion.div className="mb-2.5 space-y-2">
                 <button
-                  onClick={handleGenerateDashboard}
-                  disabled={loading}
-                  className="w-full px-4 py-3 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:opacity-90 transition-all disabled:opacity-50 font-semibold flex items-center justify-center gap-2 shadow-md"
+                  onClick={() => onPreviewDataRequested?.()}
+                  disabled={loading || pipelinePhase === 'idle'}
+                  className="w-full px-4 py-3 text-sm bg-white text-gray-900 rounded-xl hover:bg-gray-50 border border-gray-200 transition-all disabled:opacity-50 font-semibold flex items-center justify-center gap-2 shadow-sm"
                 >
-                  <LayoutDashboard size={18} />
-                  Preview Dashboard
-                  <Sparkles size={14} className="opacity-70" />
+                  <FileSpreadsheet size={18} />
+                  Preview Data
                 </button>
-                {showDriveConfirm && isDriveConfigured() && (
+
+                {pipelinePhase === 'dashboard-ready' && (
+                  <button
+                    onClick={handleGenerateDashboard}
+                    disabled={loading}
+                    className="w-full px-4 py-3 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:opacity-90 transition-all disabled:opacity-50 font-semibold flex items-center justify-center gap-2 shadow-md"
+                  >
+                    <LayoutDashboard size={18} />
+                    Preview Dashboard
+                    <Sparkles size={14} className="opacity-70" />
+                  </button>
+                )}
+
+                {showDriveConfirm && isDriveConfigured() && pipelinePhase === 'dashboard-ready' && (
                   <button
                     onClick={handleConfirmAndStore}
                     disabled={driveStatus === 'uploading'}

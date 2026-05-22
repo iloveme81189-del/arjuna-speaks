@@ -153,6 +153,9 @@ export function Dashboard() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
+  // DataPreview is NOT shown automatically; it appears only after explicit user request.
+  const [showDataPreview, setShowDataPreview] = useState(false);
+
   // Hard-sync the theme class to the document root to override system defaults on load
   useEffect(() => {
     if (darkMode) {
@@ -264,7 +267,10 @@ export function Dashboard() {
           {/* Chat Sidebar — Left */}
           <aside className="w-full lg:w-[400px] flex-shrink-0" style={{ transform: 'translateZ(30px)' }}>
             <div className="sticky top-24 h-[calc(100vh-120px)] min-h-[600px]">
-              <AIChat onDashboardGenerated={handleDashboardGenerated} />
+              <AIChat
+                onDashboardGenerated={handleDashboardGenerated}
+                onPreviewDataRequested={() => setShowDataPreview(true)}
+              />
             </div>
           </aside>
 
@@ -380,20 +386,28 @@ export function Dashboard() {
                 </div>
               </>
             ) : uploadedData ? (
-              /* Data Preview Workspace — shown after upload but before dashboard generation */
+              /* Data Preview Workspace — NOT auto-rendered (avoids chat overlap issues) */
               <>
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-4"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Data Workspace</h2>
                     <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-medium border border-blue-200 dark:border-blue-800/50">
                       Awaiting Dashboard Generation
                     </span>
                   </div>
-                  <DataPreview data={uploadedData} />
+
+                  {showDataPreview ? (
+                    <DataPreview data={uploadedData} />
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800/50 text-sm text-gray-700 dark:text-gray-200">
+                      Data preview is hidden by default for better visibility on large uploads.
+                      Use the <span className="font-semibold">Preview Data</span> button in the left chat panel to view a small table sample.
+                    </div>
+                  )}
                 </motion.div>
               </>
             ) : (
