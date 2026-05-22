@@ -16,9 +16,3 @@ credentials.json
 .venv/
 venv/
 ENV/
-credentials.json
-
-# Python Virtual Environments
-.venv/
-venv/
-ENV/

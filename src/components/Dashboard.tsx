@@ -114,9 +114,17 @@ function computeMetricValue(expression: string, rows: Record<string, string | nu
     case 'count':
       return rows.length;
     case 'min':
-      return Math.min(...rows.map((row) => Number(row[column]) || 0));
+      if (rows.length === 0) return 0;
+      return rows.reduce((min, row) => {
+        const val = Number(row[column]) || 0;
+        return val < min ? val : min;
+      }, Number(rows[0][column]) || 0);
     case 'max':
-      return Math.max(...rows.map((row) => Number(row[column]) || 0));
+      if (rows.length === 0) return 0;
+      return rows.reduce((max, row) => {
+        const val = Number(row[column]) || 0;
+        return val > max ? val : max;
+      }, Number(rows[0][column]) || 0);
     default:
       return 0;
   }
