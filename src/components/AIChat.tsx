@@ -666,11 +666,11 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
                         )}
                         {/* 3-Cards for analysis responses */}
                         {msg.metadata?.type === 'analysis' && msg.metadata.sections && (
-                          <div className="mt-4 grid grid-cols-3 gap-2">
+                          <div className="mt-4 flex flex-col gap-3">
                             {msg.metadata.sections.map((section, idx) => (
-                              <div key={idx} className="p-3 rounded-xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700/50 shadow-sm">
+                              <div key={idx} className="p-4 rounded-xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700/50 shadow-sm transition-all hover:shadow-md">
                                 <div className="flex items-center gap-1.5 mb-2">
-                                  <div className={`w-2 h-2 rounded-full ${
+                                  <div className={`w-2.5 h-2.5 rounded-full ${
                                     idx === 0 ? 'bg-blue-500' : idx === 1 ? 'bg-indigo-500' : 'bg-violet-500'
                                   }`} />
                                   <span className={`text-[10px] font-semibold uppercase tracking-wider ${
@@ -749,24 +749,8 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
       {/* File Upload Overlay */}
       <AnimatePresence>
         {showUpload && (
-          <div className="px-4 pb-2 max-w-3xl mx-auto w-full">
+          <div className="px-4 pb-2 w-full">
             <FileUpload onFileParsed={handleFileParsed} onCancel={() => setShowUpload(false)} />
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Data Preview with inline editing */}
-      <AnimatePresence>
-        {uploadedData && !showUpload && (
-          <div className="px-4 pb-2 max-w-3xl mx-auto w-full">
-            <DataPreview
-              data={uploadedData}
-              onDataUpdate={(updatedData) => {
-                if (activeSessionId) {
-                  setStoreUploadedData(activeSessionId, updatedData);
-                }
-              }}
-            />
           </div>
         )}
       </AnimatePresence>

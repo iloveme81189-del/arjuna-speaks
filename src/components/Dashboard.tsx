@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { AIChat } from './AIChat';
 import { DynamicChart } from './DynamicChart';
+import { DataPreview } from './DataPreview';
 import { DashboardConfig, UploadedData } from '../types/dashboard';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -240,17 +241,17 @@ export function Dashboard() {
       {/* Spacer for fixed header */}
       <div className="h-16" />
 
-      <main className="max-w-7xl mx-auto p-6 transition-all duration-700" style={{ perspective: '1500px' }}>
+      <main className="max-w-[1600px] mx-auto p-6 transition-all duration-700" style={{ perspective: '1500px' }}>
         <div className="grid gap-6 grid-cols-1 xl:grid-cols-[420px_1fr]">
           {/* Chat Sidebar — Left */}
-          <div className="block order-1 xl:order-1" style={{ transform: 'translateZ(30px)' }}>
+          <div className="block" style={{ transform: 'translateZ(30px)' }}>
             <div className="sticky top-24">
               <AIChat onDashboardGenerated={handleDashboardGenerated} />
             </div>
           </div>
 
           {/* Dashboard Area — Right */}
-          <div className="space-y-6 min-w-0 order-2 xl:order-2" style={{ transformStyle: 'preserve-3d' }}>
+          <div className="space-y-6 min-w-0" style={{ transformStyle: 'preserve-3d' }}>
             {dashboardConfig && uploadedData ? (
               <>
                 {/* Dashboard Header */}
@@ -359,6 +360,23 @@ export function Dashboard() {
                     />
                   ))}
                 </div>
+              </>
+            ) : uploadedData ? (
+              /* Data Preview Workspace — shown after upload but before dashboard generation */
+              <>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Data Workspace</h2>
+                    <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-medium border border-blue-200 dark:border-blue-800/50">
+                      Awaiting Dashboard Generation
+                    </span>
+                  </div>
+                  <DataPreview data={uploadedData} />
+                </motion.div>
               </>
             ) : (
               /* Empty State */
