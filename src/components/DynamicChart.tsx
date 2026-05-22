@@ -13,8 +13,8 @@ const COLORS_BY_SCHEME: Record<string, string[]> = CHART_COLORS;
 function TooltipContent({ active, payload, label }: any) {
   if (!active || !payload) return null;
   return (
-    <div className="bg-gray-900 text-white px-3 py-2 rounded-lg shadow-xl text-xs border border-gray-700">
-      <p className="font-medium mb-1">{label}</p>
+    <div className="bg-white text-gray-800 px-3 py-2 rounded-lg shadow-xl text-xs border border-gray-200">
+      <p className="font-medium mb-1 text-gray-900">{label}</p>
       {payload.map((entry: any, i: number) => (
         <p key={i} style={{ color: entry.color }}>
           {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
@@ -272,8 +272,8 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
                     if (!active || !payload?.length) return null;
                     const d = payload[0].payload;
                     return (
-                      <div className="bg-gray-900 text-white px-3 py-2 rounded-lg shadow-xl text-xs border border-gray-700">
-                        <p className="font-medium mb-1">{d.name}</p>
+                      <div className="bg-white text-gray-800 px-3 py-2 rounded-lg shadow-xl text-xs border border-gray-200">
+                        <p className="font-medium mb-1 text-gray-900">{d.name}</p>
                         <p style={{ color: colors[0] }}>X ({config.dataKeyX}): {d.name}</p>
                         <p style={{ color: colors[1] }}>Y ({config.dataKeyY}): {typeof d.value === 'number' ? d.value.toLocaleString() : d.value}</p>
                         {d.z !== undefined && <p style={{ color: colors[2] }}>Z ({config.dataKeyZ}): {d.z.toLocaleString()}</p>}
@@ -404,17 +404,17 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
         <div className="h-full overflow-auto">
           <table className="w-full text-[10px]">
             <thead>
-              <tr className="border-b border-gray-700">
+              <tr className="border-b border-gray-200">
                 {headers.map((h) => (
-                  <th key={h} className="px-2 py-1 text-left font-medium text-gray-400 truncate max-w-[80px]">{h}</th>
+                  <th key={h} className="px-2 py-1 text-left font-medium text-gray-500 truncate max-w-[80px]">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {data.slice(0, 15).map((row, i) => (
-                <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                <tr key={i} className="border-b border-gray-200 hover:bg-gray-50">
                   {headers.map((h) => (
-                    <td key={h} className="px-2 py-1 text-gray-300 truncate max-w-[80px]">{String(row[h] ?? '—')}</td>
+                    <td key={h} className="px-2 py-1 text-gray-600 truncate max-w-[80px]">{String(row[h] ?? '—')}</td>
                   ))}
                 </tr>
               ))}
@@ -468,7 +468,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
           {unique.slice(0, 20).map((item) => (
             <div
               key={String(item)}
-              className="px-3 py-1.5 text-xs text-gray-300 bg-gray-800/50 rounded-lg hover:bg-purple-500/20 hover:text-purple-300 cursor-pointer transition-all border border-gray-700/50"
+              className="px-3 py-1.5 text-xs text-gray-600 bg-white rounded-lg hover:bg-purple-50 hover:text-purple-700 cursor-pointer transition-all border border-gray-200"
             >
               {String(item)}
             </div>
@@ -481,7 +481,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       const unique = [...new Set(chartData.map((d) => d.name))];
       return (
         <div className="h-full flex items-start">
-          <select className="w-full bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500/30">
+          <select className="w-full bg-white border border-gray-200 text-gray-700 text-xs rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500/30">
             <option value="">All</option>
             {unique.slice(0, 50).map((item) => (
               <option key={String(item)} value={String(item)}>{String(item)}</option>
@@ -495,7 +495,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       return (
         <div className="h-full flex items-center justify-center text-gray-500">
           <div className="text-center">
-            <div className="text-xs mb-2 text-gray-400">Date Range</div>
+            <div className="text-xs mb-2 text-gray-500">Date Range</div>
             <input type="range" min="0" max="100" className="w-full accent-purple-500" />
             <div className="flex justify-between text-[10px] text-gray-500 mt-1">
               <span>Start</span>
@@ -513,10 +513,9 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
       const avgVal = totalRows > 0 ? sumVal / totalRows : 0;
       return (
         <div className="h-full flex items-center justify-center text-xs text-gray-400 leading-relaxed px-4">
-          <div className="text-center">
-            <p>📊 <strong className="text-gray-200">{totalRows}</strong> data points analyzed</p>
-            <p className="mt-1">Total: <strong className="text-gray-200">{sumVal.toLocaleString()}</strong></p>
-            <p>Average: <strong className="text-gray-200">{avgVal.toLocaleString(undefined, { maximumFractionDigits: 1 })}</strong></p>
+          <div className="text-center">              <p>📊 <strong className="text-gray-800">{totalRows}</strong> data points analyzed</p>
+              <p className="mt-1">Total: <strong className="text-gray-800">{sumVal.toLocaleString()}</strong></p>
+              <p>Average: <strong className="text-gray-800">{avgVal.toLocaleString(undefined, { maximumFractionDigits: 1 })}</strong></p>
             <p className="mt-2 text-gray-500">AI-powered narrative generation</p>
           </div>
         </div>
@@ -546,7 +545,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
               <span>0</span>
               <span>Target: {target.toLocaleString()}</span>
             </div>
-            <div className="w-full bg-gray-700 rounded-full h-5 overflow-hidden relative">
+            <div className="w-full bg-gray-200 rounded-full h-5 overflow-hidden relative">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${pct}%` }}
@@ -574,7 +573,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
             return (
               <div key={i} className="flex items-center gap-2">
                 <span className="text-[10px] text-gray-400 w-20 truncate text-right">{String(d.name).slice(0, 12)}</span>
-                <div className="flex-1 h-4 bg-gray-800 rounded-full overflow-hidden">
+                <div className="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${widthPct}%` }}
@@ -665,8 +664,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
     // ——— SINGLE VALUE / MULTI-ROW CARD ———
     if (type === 'single-value' || type === 'multi-row-card') {
       return (
-        <div className="h-full flex flex-col items-center justify-center">
-          <div className="text-5xl font-bold text-white">
+        <div className="h-full flex flex-col items-center justify-center">            <div className="text-5xl font-bold text-gray-900">
             {Number(chartData[0]?.value || 0).toLocaleString()}
           </div>
           <div className="text-xs text-gray-400 mt-2">{config.dataKeyY}</div>
@@ -682,7 +680,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
             {chartData.slice(0, 25).map((d, i) => (
               <div
                 key={i}
-                className="flex flex-col items-center justify-center p-2 rounded-lg bg-gray-800/50 border border-gray-700/50"
+                className="flex flex-col items-center justify-center p-2 rounded-lg bg-gray-50 border border-gray-200"
               >
                 <div
                   className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
@@ -690,7 +688,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
                 >
                   {String(d.name).charAt(0).toUpperCase()}
                 </div>
-                <span className="text-[9px] text-gray-400 mt-0.5 truncate w-full text-center">{Number(d.value).toLocaleString()}</span>
+                <span className="text-[9px] text-gray-600 mt-0.5 truncate w-full text-center">{Number(d.value).toLocaleString()}</span>
               </div>
             ))}
           </div>
@@ -710,7 +708,7 @@ export function DynamicChart({ config, data, colorScheme = 'corporate', index = 
             </p>
             <div className="flex flex-wrap gap-1 justify-center mt-2">
               {chartData.slice(0, 8).map((d, i) => (
-                <span key={i} className="px-1.5 py-0.5 text-[9px] rounded bg-gray-800 text-gray-400">
+                <span key={i} className="px-1.5 py-0.5 text-[9px] rounded bg-gray-100 text-gray-600">
                   {String(d.name).slice(0, 10)}: {Number(d.value).toLocaleString()}
                 </span>
               ))}

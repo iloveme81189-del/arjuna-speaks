@@ -98,7 +98,7 @@ export function FileUpload({ onFileParsed, onCancel }: FileUploadProps) {
           <div className="flex gap-2">
             <button
               onClick={() => inputRef.current?.click()}
-              className="px-4 py-2 text-xs font-medium bg-gray-900 text-white rounded-lg hover:opacity-90 transition-all"
+              className="px-4 py-2 text-xs font-medium bg-blue-600 text-white rounded-lg hover:opacity-90 transition-all"
             >
               Browse files
             </button>

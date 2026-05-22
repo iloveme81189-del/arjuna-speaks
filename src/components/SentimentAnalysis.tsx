@@ -35,14 +35,14 @@ export function SentimentAnalysis({ currentData }: SentimentAnalysisProps) {
 
   useEffect(() => {
     const loadSentiment = async () => {
-      const dataPreview = {
+      const currentMetrics = {
         activeUsers: currentData.activeUsers,
         avgSessionDuration: currentData.avgSessionDuration,
         ctr: currentData.ctr,
         conversion: currentData.conversion,
       };
       const response = await sendMessage(
-        `Analyze the overall user sentiment based on these metrics: Active Users: ${dataPreview.activeUsers}, Session Duration: ${dataPreview.avgSessionDuration}min, CTR: ${dataPreview.ctr}%, Conversion: ${dataPreview.conversion}%. Provide a single word (positive/neutral/negative) followed by a sentiment score from 0-100.`,
+        `Analyze the overall user sentiment based on these metrics: Active Users: ${currentMetrics.activeUsers}, Session Duration: ${currentMetrics.avgSessionDuration}min, CTR: ${currentMetrics.ctr}%, Conversion: ${currentMetrics.conversion}%. Provide a single word (positive/neutral/negative) followed by a sentiment score from 0-100.`,
         undefined,
         'llama3-8b-8192',
         'chat'

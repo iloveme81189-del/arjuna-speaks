@@ -644,7 +644,7 @@ export function AIChat({
                 ) : msg.role === 'user' ? (
                   <div className="flex justify-end">
                     <div className="flex gap-2 max-w-[75%] items-end">
-                      <div className="px-4 py-2.5 rounded-2xl bg-gray-900 text-white text-sm leading-relaxed">
+                      <div                      className="px-4 py-2.5 rounded-2xl bg-blue-600 text-white text-sm leading-relaxed">
                         <div className="whitespace-pre-wrap">{msg.content}</div>
                       </div>
                       <div className="w-7 h-7 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
