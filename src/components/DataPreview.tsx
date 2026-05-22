@@ -121,7 +121,7 @@ export function DataPreview({ data, onDataUpdate }: DataPreviewProps) {
         )}
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">

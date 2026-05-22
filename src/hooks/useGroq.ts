@@ -145,6 +145,7 @@ function getPhaseSystemPrompt(phase: PipelinePhase, data?: UploadedData): string
 
 Focus on:
 1. **Data Overview** — Total rows, columns, types of data (numeric vs categorical)
+2. **Transformation Recommendations** — Suggest specific ways to clean or group columns for better insights.
 2. **Key Statistics** — For numeric columns: min, max, avg, sum, missing values. Present in a clean structured format.
 3. **Data Quality** — Any missing data, outliers, or anomalies you spot
 4. **Column Descriptions** — Briefly describe what each column likely represents
@@ -230,75 +231,15 @@ export function useGroq() {
     let userContent = message;
 
     if (data) {
-      const dataPreview = {
-        fileName: data.fileName,
-        totalRows: data.totalRows,
-        totalCols: data.totalCols,
-        headers: data.headers,
-        numericColumns: data.numericColumns,
-        categoricalColumns: data.categoricalColumns,
-        sampleRows: data.rows.slice(0, 10),
-      };
-
-      if (type === 'dashboard') {
-        const basePrompt = getSystemPrompt('dashboard');
-        userContent = `Generate a professional dashboard for this data. Return ONLY valid JSON.`;
-        const dataContext = `\n\nThe user uploaded "${data.fileName}" with ${data.totalRows} rows and ${data.totalCols} columns.
-Columns: ${data.headers.join(', ')}
-Numeric: ${data.numericColumns.join(', ') || 'none'}
-Categorical: ${data.categoricalColumns.join(', ') || 'none'}`;
-        // We need the dashboard prompt + data context
-        // Rebuild: use a custom system prompt that includes both
-        const dashboardSystemPrompt = getSystemPrompt('dashboard') + dataContext;
-        
-        try {
-          const response = await fetch(GROQ_URL, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${GROQ_API_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: 'system', content: dashboardSystemPrompt },
-                { role: 'user', content: userContent },
-              ],
-              temperature: 0.2,
-              max_tokens: 2048,
-            }),
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`Groq API error (${response.status}): ${errText}`);
-          }
-
-          const result = await response.json();
-          const content = result.choices[0].message.content;
-          
-          try {
-            let jsonStr = content.trim();
-            if (jsonStr.startsWith('```')) {
-              jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-            }
-            return JSON.parse(jsonStr) as DashboardConfig;
-          } catch {
-            return content;
-          }
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Unknown error');
-          return null;
-        } finally {
-          setLoading(false);
-        }
-      }
+      const sampleRows = data.rows.slice(0, 10);
 
       // For pipeline phases (summarize, recommend, ml-process) or analyze/chat
       if (isPipelinePhase) {
-        userContent = `Data file: ${data.fileName}\nColumns: ${data.headers.join(', ')}\nNumeric: ${data.numericColumns.join(', ') || 'none'}\nCategorical: ${data.categoricalColumns.join(', ') || 'none'}\nTotal rows: ${data.totalRows}\nSample data (first 10 rows):\n${JSON.stringify(dataPreview.sampleRows, null, 2)}\n\n${message}`;
+        userContent = `Data file: ${data.fileName}\nColumns: ${data.headers.join(', ')}\nNumeric: ${data.numericColumns.join(', ') || 'none'}\nCategorical: ${data.categoricalColumns.join(', ') || 'none'}\nTotal rows: ${data.totalRows}\nSample data (first 10 rows):\n${JSON.stringify(sampleRows, null, 2)}\n\n${message}`;
+      } else if (type === 'dashboard') {
+        userContent = `Generate a professional dashboard for this data. Return ONLY valid JSON. Data file: ${data.fileName}\nColumns: ${data.headers.join(', ')}\nNumeric: ${data.numericColumns.join(', ') || 'none'}\nCategorical: ${data.categoricalColumns.join(', ') || 'none'}\nTotal rows: ${data.totalRows}\nSample data:\n${JSON.stringify(sampleRows, null, 2)}`;
       } else if (type === 'analyze' || type === 'chat') {
-        userContent = `Data file: ${data.fileName}\nColumns: ${data.headers.join(', ')}\nSample (${data.totalRows} rows):\n${JSON.stringify(dataPreview.sampleRows, null, 2)}\n\nQuestion: ${message}`;
+        userContent = `Data file: ${data.fileName}\nColumns: ${data.headers.join(', ')}\nSample (${data.totalRows} rows):\n${JSON.stringify(sampleRows, null, 2)}\n\nQuestion: ${message}`;
       }
     }
 

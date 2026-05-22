@@ -45,7 +45,6 @@ export function FileUpload({ onFileParsed, onCancel }: FileUploadProps) {
         result = await parseExcelFile(f);
       }
       onFileParsed(result, f);
-    }
     } catch (err) {
       setError((err as Error).message);
       setFile(null);
@@ -119,12 +118,13 @@ export function FileUpload({ onFileParsed, onCancel }: FileUploadProps) {
         </div>
       ) : parsing ? (
         <div className="flex flex-col items-center justify-center gap-2 py-6">
-        <div className="flex items-center justify-center gap-3 py-4">
-          <Loader2 size={18} className="animate-spin text-teal-500" />
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Processing <strong className="text-gray-700 dark:text-gray-300">{file.name}</strong>...
-          </span>
-          <span className="text-[10px] text-gray-400">Large files may take a moment</span>
+          <div className="flex items-center justify-center gap-3 py-4">
+            <Loader2 size={18} className="animate-spin text-teal-500" />
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Processing <strong className="text-gray-700 dark:text-gray-300">{file.name}</strong>...
+            </span>
+            <span className="text-[10px] text-gray-400">Large files may take a moment</span>
+          </div>
         </div>
       ) : (
         <div className="flex items-center justify-between">

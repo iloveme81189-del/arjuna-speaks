@@ -132,7 +132,8 @@ export type PipelinePhase =
   | 'recommended'
   | 'awaiting-logic'
   | 'ml-processing'
-  | 'dashboard-ready';
+  | 'dashboard-ready'
+  | 'completed';
 
 export interface AnalysisSection {
   title: string;

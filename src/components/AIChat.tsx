@@ -27,7 +27,8 @@ const PIPELINE_STEPS: { phase: PipelinePhase; label: string; icon: React.ReactNo
   { phase: 'recommending', label: 'Recommendations', icon: <Lightbulb size={14} /> },
   { phase: 'awaiting-logic', label: 'Business Logic', icon: <BrainCircuit size={14} /> },
   { phase: 'ml-processing', label: 'ML Processing', icon: <Loader2 size={14} /> },
-  { phase: 'dashboard-ready', label: 'Dashboard Ready', icon: <LayoutDashboard size={14} /> },
+  { phase: 'dashboard-ready', label: 'Preview Ready', icon: <LayoutDashboard size={14} /> },
+  { phase: 'completed', label: 'Stored & Shared', icon: <Check size={14} /> },
 ];
 
 const PHASE_LABELS: Record<string, string> = {
@@ -54,6 +55,8 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
   const [selectedModel, setSelectedModel] = useState<GroqModel>('llama-3.3-70b-versatile');
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [driveStatus, setDriveStatus] = useState<'idle' | 'uploading' | 'uploaded' | 'error'>('idle');
+  const [pendingConfig, setPendingConfig] = useState<DashboardConfig | null>(null);
+  const [showDriveConfirm, setShowDriveConfirm] = useState(false);
   const [driveUrl, setDriveUrl] = useState<string | null>(null);
 
   // Pipeline state
@@ -69,6 +72,9 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const logicInputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Helper to generate unique IDs for React keys
+  const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, pipelinePhase]);
@@ -79,7 +85,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
 
   /** Determine the current step index for the pipeline progress bar */
   const getCurrentStepIndex = (): number => {
-    const order: PipelinePhase[] = ['summarizing', 'recommending', 'awaiting-logic', 'ml-processing', 'dashboard-ready'];
+    const order: PipelinePhase[] = ['summarizing', 'recommending', 'awaiting-logic', 'ml-processing', 'dashboard-ready', 'completed'];
     const idx = order.indexOf(pipelinePhase);
     return idx >= 0 ? idx : -1;
   };
@@ -137,16 +143,16 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
     setPipelineLoading(true);
 
     const summaryResponse = await sendMessage(
-      'Provide a comprehensive summary of this data. Include: data overview (rows, columns, types), key statistics for each numeric column (min, max, avg, sum, missing values), data quality notes, column descriptions, and potential use cases.',
+      'Analyze this data deeply. Provide insights, identify data types, and suggest specific transformations for columns (e.g., date formatting, normalization, or grouping) that would improve visualization.',
       data,
       selectedModel,
-      'summarize'
+      'summarizing'
     );
 
     if (summaryResponse && typeof summaryResponse === 'string') {
       setSummaryContent(summaryResponse);
       const summaryMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: generateId(),
         role: 'assistant',
         content: `## 📊 Data Summary\n\n${summaryResponse}`,
         timestamp: new Date(),
@@ -158,17 +164,17 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
     setPipelinePhase('recommending');
 
     const recommendResponse = await sendMessage(
-      'Based on this data, provide detailed dashboard recommendations covering: 1) Top 3-5 KPIs with why they matter 2) Best chart types for different aspects of the data with explanations 3) Recommended layout and visual hierarchy 4) Best color scheme 5) Business logic opportunities (groupings, calculations, filters).',
+      'Recommend the visual architecture. Suggest the best chart types (including potential 3D-depth visualizations), optimal column mappings, and transformation logic for professional dashboards.',
       data,
       selectedModel,
-      'recommend'
+      'recommending'
     );
 
     if (recommendResponse && typeof recommendResponse === 'string') {
       setRecommendationsContent(recommendResponse);
       const sections = parseAnalysisSections(recommendResponse);
       const recommendMsg: ChatMessage = {
-        id: (Date.now() + 2).toString(),
+        id: generateId(),
         role: 'assistant',
         content: `## 🎯 Dashboard Recommendations\n\n${recommendResponse}`,
         timestamp: new Date(),
@@ -202,7 +208,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
 
     // Add user's business logic as a message
     const logicMsg: ChatMessage = {
-      id: Date.now().toString(),
+      id: generateId(),
       role: 'user',
       content: `📋 Business Logic: ${logicText}`,
       timestamp: new Date(),
@@ -214,16 +220,16 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
     setPipelineLoading(true);
 
     const mlResponse = await sendMessage(
-      `Apply intelligent ML processing with maximum accuracy. User business logic: ${logicText}. Perform: 1) Data enrichment (derived metrics, growth rates, ratios) 2) Pattern detection (trends, seasonality, outliers, correlations) 3) Business logic application 4) Aggregation planning for visualization 5) Accuracy validation. Return structured results.`,
+      `Process data with logic: ${logicText}. Identify trends, anomalies, and prepare for 3D visualizations. If no logic, autonomously determine the best transformation patterns.`,
       uploadedData,
       selectedModel,
-      'ml-process'
+      'ml-processing'
     );
 
     if (mlResponse && typeof mlResponse === 'string') {
       setMlResultContent(mlResponse);
       const mlMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: generateId(),
         role: 'assistant',
         content: `## 🔬 ML Processing Complete\n\n${mlResponse}`,
         timestamp: new Date(),
@@ -236,13 +242,38 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
     setPipelineLoading(false);
   }, [activeSessionId, uploadedData, businessLogic, selectedModel, sendMessage, addMessage]);
 
+   const handleConfirmAndStore = async () => {
+    if (!pendingConfig || !uploadedData || !activeSessionId) return;
+    
+    setDriveStatus('uploading');
+    try {
+      const dashboardUrl = `${window.location.origin}?dashboard=${encodeURIComponent(pendingConfig.title)}`;
+      const driveFile = await saveDashboardLinkToDrive(pendingConfig.title, dashboardUrl, pendingConfig.description);
+      
+      setDriveUrl(driveFile.webViewLink);
+      setDriveStatus('uploaded');
+      setPipelinePhase('completed');
+      
+      const shareMsg: ChatMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: `### 🎉 Report Finished & Stored\nYour professional dashboard is now live and stored in your Google Drive 'Reports' folder.\n\n**Shareable Links:**\n1. 📂 Google Drive Folder\n2. 🔗 Public Dashboard Link`,
+        timestamp: new Date(),
+      };
+      addMessage(activeSessionId, shareMsg);
+      setShowDriveConfirm(false);
+    } catch (err) {
+      setDriveStatus('error');
+    }
+  };
+
   const handleFileParsed = async (data: UploadedData, file: File) => {
     if (!activeSessionId) return;
     setStoreUploadedData(activeSessionId, data);
     setShowUpload(false);
 
     const fileMsg: ChatMessage = {
-      id: Date.now().toString(),
+      id: generateId(),
       role: 'system',
       content: `📎 Uploaded **${data.fileName}** — ${data.totalRows} rows, ${data.totalCols} columns`,
       timestamp: new Date(),
@@ -259,7 +290,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
     setInput('');
 
     const userMsg: ChatMessage = {
-      id: Date.now().toString(),
+      id: generateId(),
       role: 'user',
       content: text,
       timestamp: new Date(),
@@ -276,7 +307,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
       if (response && typeof response === 'object' && 'title' in response) {
         const config = response as DashboardConfig;
         const aiMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
+          id: generateId(),
           role: 'assistant',
           content: `## ${config.title}\n${config.description || ''}\n\n${config.dataSummary || ''}`,
           timestamp: new Date(),
@@ -287,7 +318,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
         return;
       } else if (response && typeof response === 'string') {
         const aiMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
+          id: generateId(),
           role: 'assistant',
           content: response,
           timestamp: new Date(),
@@ -300,7 +331,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
     const response = await sendMessage(text, uploadedData || undefined, selectedModel, 'chat');
     if (response && typeof response === 'string') {
       const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: generateId(),
         role: 'assistant',
         content: response,
         timestamp: new Date(),
@@ -313,7 +344,7 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
     if (!uploadedData || loading || !activeSessionId) return;
 
     const userMsg: ChatMessage = {
-      id: Date.now().toString(),
+      id: generateId(),
       role: 'user',
       content: '✨ Generate a professional dashboard from my data',
       timestamp: new Date(),
@@ -330,36 +361,16 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
     if (response && typeof response === 'object' && 'title' in response) {
       const config = response as DashboardConfig;
       const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: generateId(),
         role: 'assistant',
         content: `## ${config.title}\n${config.description || ''}\n\n${config.dataSummary || ''}`,
         timestamp: new Date(),
         metadata: { type: 'dashboard', dashboardConfig: config },
       };
       addMessage(activeSessionId, aiMsg);
+      setPendingConfig(config);
+      setShowDriveConfirm(true);
       onDashboardGenerated?.(config, uploadedData);
-
-      // Save dashboard link to Drive reports folder
-      if (isDriveConfigured()) {
-        setDriveStatus('uploading');
-        try {
-          const dashboardUrl = `${window.location.origin}?dashboard=${encodeURIComponent(config.title)}`;
-          const driveFile = await saveDashboardLinkToDrive(config.title, dashboardUrl, config.description);
-          setDriveUrl(driveFile.webViewLink);
-          setDriveStatus('uploaded');
-
-          // Add a Drive link message
-          const driveMsg: ChatMessage = {
-            id: (Date.now() + 2).toString(),
-            role: 'system',
-            content: `📁 Dashboard saved to Google Drive — [View on Drive](${driveFile.webViewLink})`,
-            timestamp: new Date(),
-          };
-          addMessage(activeSessionId, driveMsg);
-        } catch {
-          setDriveStatus('error');
-        }
-      }
     }
   };
 
@@ -816,24 +827,26 @@ export function AIChat({ onDashboardGenerated, standalone = false }: AIChatProps
           {/* Generate Dashboard Button — only when pipeline is complete */}
           <AnimatePresence>
             {pipelinePhase === 'dashboard-ready' && uploadedData && (
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                className="mb-2.5"
-              >
+              <motion.div className="mb-2.5 space-y-2">
                 <button
                   onClick={handleGenerateDashboard}
                   disabled={loading}
-                  className="w-full px-4 py-3 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:opacity-90 transition-all disabled:opacity-50 font-semibold flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                  className="w-full px-4 py-3 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:opacity-90 transition-all disabled:opacity-50 font-semibold flex items-center justify-center gap-2 shadow-md"
                 >
                   <LayoutDashboard size={18} />
-                  Generate Dashboard
+                  Preview Dashboard
                   <Sparkles size={14} className="opacity-70" />
                 </button>
-                <p className="text-[9px] text-gray-400 dark:text-gray-500 text-center mt-1">
-                  All analysis complete — click to build your professional dashboard
-                </p>
+                {showDriveConfirm && (
+                  <button
+                    onClick={handleConfirmAndStore}
+                    disabled={driveStatus === 'uploading'}
+                    className="w-full px-4 py-3 text-sm bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    {driveStatus === 'uploading' ? <Loader2 size={16} className="animate-spin" /> : <Cloud size={16} />}
+                    Confirm & Store to Drive
+                  </button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

@@ -700,8 +700,9 @@ export function DynamicChart({ config, data, colorScheme = 'corporate' }: Dynami
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 p-5"
+      whileHover={{ scale: 1.01, rotateX: 1, rotateY: -1, translateZ: 10 }}
+      transition={{ duration: 0.4, type: 'spring' }}
+      className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-5 transform-gpu"
     >
       <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">{config.title}</h3>
       {config.description && (

@@ -6,7 +6,8 @@ import {
   RefreshCw, BarChart3, PieChart, Globe, Share2, Check,
 } from 'lucide-react';
 import { AIChat } from './AIChat';
-import { DynamicChart } from './DynamicChart';import { DashboardConfig, UploadedData } from '../types/dashboard';
+import { DynamicChart } from './DynamicChart';
+import { DashboardConfig, UploadedData } from '../types/dashboard';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   'trending-up': <TrendingUp size={18} />,
@@ -121,16 +122,21 @@ function computeMetricValue(expression: string, rows: Record<string, string | nu
 }
 
 function formatValue(value: number, suffix?: string): string {
-  if (suffix === '%') return value.toFixed(1) + '%';
-  if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
-  if (value >= 1000) return (value / 1000).toFixed(1) + 'K';
-  return value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+  let formatted = '';
+  if (value >= 1000000) formatted = (value / 1000000).toFixed(1) + 'M';
+  else if (value >= 1000) formatted = (value / 1000).toFixed(1) + 'K';
+  else formatted = value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+
+  if (suffix === '%') return formatted + '%';
+  if (suffix === '$') return '$' + formatted;
+  return formatted + (suffix || '');
 }
+  
 
 const DASHBOARD_STORAGE_KEY = 'arjuna_dashboard';
 
 export function Dashboard() {
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(false); // Default to white theme
   const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig | null>(null);
   const [uploadedData, setUploadedData] = useState<UploadedData | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -200,9 +206,6 @@ export function Dashboard() {
               <h1 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
                 Arjuna Speaks
               </h1>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 -mt-0.5">
-                AI-Powered Data Intelligence
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -237,17 +240,17 @@ export function Dashboard() {
       {/* Spacer for fixed header */}
       <div className="h-16" />
 
-      <main className="max-w-7xl mx-auto p-6">
+      <main className="max-w-7xl mx-auto p-6 transition-all duration-700" style={{ perspective: '1500px' }}>
         <div className="grid gap-6 grid-cols-1 xl:grid-cols-[420px_1fr]">
           {/* Chat Sidebar — Left */}
-          <div className="block">
+          <div className="block order-1 xl:order-1" style={{ transform: 'translateZ(30px)' }}>
             <div className="sticky top-24">
               <AIChat onDashboardGenerated={handleDashboardGenerated} />
             </div>
           </div>
 
           {/* Dashboard Area — Right */}
-          <div className="space-y-6 min-w-0">
+          <div className="space-y-6 min-w-0 order-2 xl:order-2" style={{ transformStyle: 'preserve-3d' }}>
             {dashboardConfig && uploadedData ? (
               <>
                 {/* Dashboard Header */}
@@ -308,8 +311,10 @@ export function Dashboard() {
                       key={metric.title}
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
+                      whileHover={{ translateZ: 50, rotateX: 2, rotateY: -2, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}
                       transition={{ delay: i * 0.04, type: 'spring', stiffness: 200 }}
-                      className="group bg-white dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl p-5 shadow-lg hover:shadow-xl border border-gray-200/50 dark:border-gray-800/50 hover:border-blue-500/20 dark:hover:border-blue-500/20 hover:-translate-y-0.5 transition-all duration-300"
+                      style={{ transformStyle: 'preserve-3d' }}
+                      className="group bg-white dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl p-5 shadow-lg border border-gray-200/50 dark:border-gray-800/50 hover:border-blue-500/20 dark:hover:border-blue-500/20 transition-all duration-300"
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div className={`p-2 rounded-xl ${colors.iconBg} group-hover:scale-110 transition-transform duration-300`}>
@@ -368,16 +373,16 @@ export function Dashboard() {
                   </div>
                 </div>
                 <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2 tracking-tight">
-                  Your Dashboard
+                  Experience the edge in automated dashboard synthesis
                 </h2>
                 <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-8 leading-relaxed">
-                  Upload your Excel or CSV file, and let the AI analyze your data. It will suggest the best KPIs, charts, and insights automatically.
+                  Welcome to **Arjuna Speaks**! Upload an Excel or CSV file to initiate a deep-learning analysis of patterns and KPIs. Our specialized engine architects professional visual intelligence tailored to your specific business logic, including 3D data visualizations.
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap justify-center items-center gap-2">
                   {['1. Upload Data', '2. AI Summary', '3. Recommendations', '4. Business Logic & ML', '5. Generate'].map((step, i) => (
-                    <div key={step} className="flex items-center gap-2">
+                    <div key={step} className="flex items-center gap-2 mb-2">
                       <div className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${
-                        i === 1
+                        i === 4
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                       }`}>
